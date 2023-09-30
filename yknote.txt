@@ -27,7 +27,10 @@ fastllm源码解析
 [fastllm]cuda-kernels源码解析
 [cuda]RMSNorm核函数解析
 https://zhuanlan.zhihu.com/p/651923791
+
 https://zhuanlan.zhihu.com/p/651016911
+[fastllm]fastllm源码结构解析
+
 https://zhuanlan.zhihu.com/p/651144351
 
 https://blog.csdn.net/sinat_37574187/article/details/132207393

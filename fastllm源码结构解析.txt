@@ -1,0 +1,267 @@
+fastllm源码结构解析
+
+https://zhuanlan.zhihu.com/p/651016911
+
+
+文件结构
+    include: 头文件，包含utils, basellm，chatglm， factoryllm, fastllm, fastllm-cuda, moss, vicuna
+    src: 源码文件， 包含chatglm, fastllm， fastllm-cuda, moss， vicuna
+    tools: 工具类，包含模型导出工具，chatglm-export, moss-export, quant
+
+
+继承与组合关系
+main中有一个factoryllm工厂，用以从中生成各个llm模型的具体实例。
+
+basellm为各个llm的基类，包含了一些常用的虚方法和模型参数，与fastllm使用相同的命名空间。
+
+fastllm：基础类，定义了数据格式、权重map，各个基础算子的操作方法等
+
+main
+--factoryllm
+--chatglm
+--basellm
+--moss
+--basellm
+--vicuna
+--basellm
+--basellm
+--fastllm
+
+核心类属性分析
+fastllm
+
+void SetThreads(int t); 设置线程
+void SetLowMemMode(bool m); 设置低内存模式
+
+struct LowBitConfig 包含bit,min,max,scale，zeroPoint，包含量化与反量化方法 // 可优化点：内存对齐
+enum DataType 包含float int8 int4等
+enum DataDevice 包含CPU和CUDA
+enum WeightType 包含LINEAR、EMBEDDING和None
+
+struct Data
+包括形状、大小、扩容后字节、扩容后大小、预扩容的形状，数据指针等，
+量化的配置等，有复制、分配、预扩容、分配、回收、resize、Permute等函数，
+
+CalcWeightSum计算权重和。
+void ToDevice 切换为cuda
+struct Tokenizer 包含TrieNode链表和tokenToStringDict字典， 有Insert插入词和对应id，encode、decode函数
+struct WeightMap 包含了模型名称、模型名称到数据内存，存在LoadFromFile、SaveLowBitModel保存低位数量化权重。
+
+void Embedding(const Data &input, Data &weight, Data &output); 根据输入和
+void RMSNorm(const Data &input, const Data &weight, float eps, Data &output);
+void LayerNorm(const Data &input, Data &gamma, Data &beta, int axis, Data &output);
+void Linear(Data &input, Data &weight, const Data &bias, Data &output);
+void Split(const Data &input, int axis, int start, int end, Data &output);
+void Cat(const Data &input0, const Data &input1, int axis, Data &output);
+void CatDirect(Data &input0, const Data &input1, int axis);
+// 直接把input1的数据拷贝到input0后面（需要input0提前扩容了足够的空间）
+
+void CatDirectAxis0(Data &input0, const Data &input1);
+// 直接把input1的数据拷贝到input0后面（axis = 0的Cat操作，需要input0提前扩容了足够的空间）
+
+void MatMulTransB(const Data &input0, const Data &input1, Data &output, float alpha = 1.0);
+void Softmax(const Data &input, Data &output, int axis);
+void Silu(const fastllm::Data &input, fastllm::Data &output);
+void GeluNew(const Data &input, Data &output);
+void Mul(const Data &input, float v, Data &output);
+void MulTo(Data &input0, const Data &input1); // input0 *= input1
+void AddTo(Data &input0, const Data &input1); // input0 += input1
+void AddTo(Data &input0, const Data &input1, float alpha); // input0 += input1 * alpha
+void AttentionMask(Data &input, const Data &mask, float maskValue); // 把input里对应位置mask中为1的部分变成maskValue
+void Permute(const Data &input, const std::vector &axis, Data &output); // 转置
+
+basellm
+继承自fastllm, llm的抽象类
+
+公有函数
+void LoadFromFile(const std::string &fileName) 纯虚函数，加载权重纯虚函数，
+int Forward 纯虚函数，进行模型推理
+std::string Response 纯虚函数，接受字符串问答并给出回复
+void SaveLowBitModel 虚函数 保存低比特
+void WarmUp 虚函数 热身
+
+私有函数
+void RotatePosition2D 旋转位置二维位置编码
+CausalMask 因果mask
+
+chatglm
+继承自basellm， llm抽象的chatglm具体实现，函数基本与basellm一致
+void LoadFromFile 虚函数，从文件中加载权重
+int Forward 虚函数，模型推理
+std::string Response 虚函数，根据给出的提示输出问答
+void SaveLowBitModel 虚函数，保存低比特的模型
+void WarmUp 虚函数，热身
+
+私有函数
+void RotatePosition2D 旋转位置二维位置编码
+CausalMask 因果mask
+
+核心实现分析
+chatglm
+ChatGLMModel()初始化：
+1-1/10000的invFreq
+sin[i][j] = ::sin((float)i * invFreq[j]);
+cos[i][j] = ::cos((float)i * invFreq[j]);
+
+RotatePosition2D():
+把key和value切成两半，分别和positionIds[0]和positionIds[1]旋转
+d[j] = a * cos[j] - b * sin[j];
+d[j + m / 4] = a * sin[j] + b * cos[j];
+
+LoadFromFile：
+使用weight.LoadFromFile加载文件
+
+Forward模型实际推理函数：
+参数：inputIds(文本编码后的id)，attentionMask(attention时的mask)，positionIds(位置编码)， pastKeyValues(以往的kv值)
+首先经过Embedding操作，得到inputs的embedding向量，
+接下来28层循环：
+
+    经过LayerNorm->Linear->shape->split等操作区分出qkv矩阵
+    调用RotatePosition2D->expansion操作旋转qkv矩阵
+    matmulTransB->Mul-->Softmax->MatMulTransB Attention结构
+    linear->Mul->Addto 残差
+    layernorm->linear->Gelu->Linear->Addto FNN残差结果
+    最后使用layerNorm->linear输出结果
+
+Response()接受文本数据，封装forward函数:
+经过tokenizer的encode进行分词并将词语转化为对应的inputs_id，初始化位置向量，mask向量，pastKV向量。
+while Trye轮训不断将当前当前输出作为下一次输入，直到遇到
+
+WarmUp():
+热身函数，构造输入运行Forward
+
+SaveLowBitModel()：保存量化权重
+调用了weight的低比特量化保存
+
+Moss
+Moss()初始化
+1-1/10000的invFreq
+sin[i][j] = ::sin((float)i * invFreq[j]);
+cos[i][j] = ::cos((float)i * invFreq[j]);
+
+LoadFromFile：
+使用weight.LoadFromFile加载文件
+
+CausalMask：
+将start后的所有值都填入一个极小值
+
+RotatePosition2D():
+把key和value切成两半，分别和positionIds[0]和positionIds[1]旋转
+d[j] = a * cos[j] - b * sin[j];
+d[j + m / 4] = a * sin[j] + b * cos[j];
+
+Forward模型推理：
+首先调用Embedding将inputs_id转化为embedding向量
+接下来循环34层：
+
+    LayerNorm->Linear->reshape->split 分割出qkv
+    调用RotatePosition2D->cat操作旋转qkv矩阵，累积pastKeyValue
+    MatMulTransB->CausalMask->AttentionMask->Softmax->MatMulTransB Attention结构
+    Linear 得到中间残差结果
+    Linear->GeluNew->Linear->AddTo 与输入以及第4步中的残差结果相加
+
+最后调用LayerNorm->Linear->sort找到最大值
+Response()接受文本数据，封装forward函数:
+经过tokenizer的encode进行分词并将词语转化为对应的inputs_id，初始化位置向量，mask向量，pastKV向量。
+while Trye轮训不断将当前当前输出作为下一次输入，直到遇到
+
+WarmUp():
+热身函数，构造输入运行Forward
+
+SaveLowBitModel()：保存量化权重
+调用了weight的低比特量化保存
+
+vicuna
+vicuna()初始化
+1-1/10000的invFreq
+sin[i][j] = ::sin((float)i * invFreq[j]);
+cos[i][j] = ::cos((float)i * invFreq[j]);
+
+LoadFromFile：
+使用weight.LoadFromFile加载文件
+
+Forward:
+首先经过Embedding，将inputs_id转化为embedding向量
+
+    RMSNorm->Linear 得到qkv矩阵
+    RotatePosition2D 对kv进行位置旋转，CatDirect得到pastkv
+    MatMulTransB->Softmax->MatMulTransB->Reshape->Linear->AddTo Attention的QKV操作，并进行残差操作
+    RMSNorm->Linear->Linear->Silu->MulTo->Linear-AddTo FFN操作，并进行残差相加
+    最后经过RMSNorm和Linear得到最终输出
+
+Response()接受文本数据，封装forward函数:
+经过tokenizer的encode进行分词并将词语转化为对应的inputs_id，初始化位置向量，mask向量，pastKV向量。
+while Trye轮训不断将当前当前输出作为下一次输入，直到遇到
+
+WarmUp():
+热身函数，构造输入运行Forward
+
+SaveLowBitModel()：保存量化权重
+调用了weight的低比特量化保存
+
+fastllm
+结构体及属性：
+threads
+lowMemMode
+FileBuffer：
+读取int、读取float、读取string、读取bytes
+FileWriter
+写int、写float、写string、写bytes
+
+Data数据的操作：
+CopyFrom 数据拷贝
+Count 统计第i维的数量
+Resize 扩容
+Reshape 形状转置
+GetBytes 得到存储空间大小
+MallocSpace 内存分配
+FreeSpace 内存释放
+Allocate 释放内存并重新分配
+Expansion 维度扩充
+Print打印
+Permute 转换通道
+CalcWeightSum 计算权重和
+
+Tokenizer方法：
+初始化为一条链表
+clear: 将数据都放在栈上，对象随栈的结束而消亡
+insert：字典树的插入方式
+encode：从字典树中找到对应的单词id
+Decode： 查表的方式找到数据到单词的映射
+
+WeightMap的方法：
+LoadFromFile：从文件中读取字典加载到权重map中
+SaveLowBitModel：保存低比特量化后的权重
+
+fastllm的方法：
+Transpose 矩阵转置
+Permute通道转换
+ToDevice将内存中的数据移动到GPU
+Multiply：int8×int8得到int32的数据
+MultiplyInt4： int4下的矩阵乘法
+MultiplyMultiThread： 多线程
+MultiplyInt4MultiThread： 多线程
+Embedding：根据inputs_id找打对应的embedding向量
+RMSNorm： 除以L2范数乘以权重
+LayerNorm：(input-mean)/var * a + b
+FloatLinearPart: 浮点数矩阵乘法
+Float16LinearPart：Float16
+Int8LinearPart：int8
+Int4LinearPart：int4
+Linear：多线程操作，根据type选择不同的矩阵乘法
+Split：按数轴进行均分
+Cat： 将数据按照axis轴进行拼接
+CatDirect：原地cat
+CatDirectAxis0：在0轴cat
+MatMulSingle：单线程下的矩阵乘积运算
+MatMulTransB：多线程转置矩阵乘法
+Softmax：激活函数
+Silu：silu激活函数
+GeluNew：Gelu激活函数
+Mul:矩阵和浮点数的乘法
+MulTo：点乘
+AddTo：点加(带alpha和不带alpha)
+AttentionMask：大于等于1的数，值为mask
+
+本文使用 Zhihu On VSCode 创作并发布
+编辑于 2023-08-31 00:58・IP 属地北京
