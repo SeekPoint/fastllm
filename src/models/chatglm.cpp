@@ -30,12 +30,18 @@ namespace fastllm {
             return;
         }
         this->rope = rope;
+
+        // 这两行代码调整 sin 和 cos 向量的大小以匹配 max_positions。
         sin.resize(max_positions);
         cos.resize(max_positions);
         std::vector <float> invFreq;
+
+        // 这部分代码计算了一系列频率的倒数，并将结果存储在 invFreq 向量中。
         for (int i = 0; i < rotary_dim; i += 2) {
             invFreq.push_back(1.0 / pow(10000, (float)i / rotary_dim));
         }
+
+        // 使用这些倒数 和 位置索引 i 来计算正弦和余弦值，并将这些值存储在 sin 和 cos 向量中。
         for (int i = 0; i < max_positions; i++) {
             sin[i].resize(rotary_dim);
             cos[i].resize(rotary_dim);
@@ -52,18 +58,21 @@ namespace fastllm {
                 fcos.push_back(cos[i][j]);
             }
         }
+
+        // 这两行代码将 sin 和 cos 向量中的数据复制到 sinData 和 cosData 对象中。
         sinData.CopyFrom(Data(DataType::FLOAT32, {(int)this->sin.size(), (int)this->sin[0].size()}, fsin));
         cosData.CopyFrom(Data(DataType::FLOAT32, {(int)this->cos.size(), (int)this->cos[0].size()}, fcos));
     }
 
     ChatGLMModel::ChatGLMModel() {
-        this->model_type = "chatglm";
+        this->model_type = "chatglm"; //这行代码设置类的 model_type 成员变量为 "chatglm"。this 是一个指向当前对象的指针。
 
-        this->bos_token_id = 130004;
-        this->eos_token_id = 130005;
-
+        this->bos_token_id = 130004; // 设置句子的开始标记
+        this->eos_token_id = 130005; // 设置句子的结束标记
         this->rope = -1.0;
         this->UpdateSinCos(1.0f);
+
+        // 设置 weight.embeddingNames 成员变量的值。
         weight.embeddingNames.insert("transformer.word_embeddings.weight");
         weight.embeddingNames.insert("transformer.embedding.word_embeddings.weight");
     }
@@ -77,6 +86,15 @@ namespace fastllm {
         return ForwardBatch(1, inputIds, attentionMask, positionIds, pastKeyValues, generationConfig, lastTokens, &batchLogits)[0];
     }
 
+    /*
+    ChatGLMModel::ForwardBatch 函数解析
+    我在下面的代码里面逐步添加了一些注释，这里的c++代码都对应了huggingface上面的chatglm-6b和chatglm2-6b的模型定义和推理的代码。
+    我不仅加了注释，还把中间tensor的维度变化也标注出来了，对KV Cache的实现也加了解释。
+    我在这里发现了唯一一个和python代码对不上的问题是在self attention的softmax之前有一行Mul(attnProbs, i + 1, attnProbs);
+    ，这行代码我不是很确定作用，我猜测是让attnProbs更大一些来降低数值溢出的风险？
+    在huggingface的实现中是不存在这一行代码的。
+    */
+    //// 这个函数是 ChatGLMModel 类的一个成员函数，名为 ForwardBatch。用于处理一批数据的前向传播。
     std::vector <int> ChatGLMModel::ForwardBatch(
             int batch,
             const Data &inputIds,
@@ -89,7 +107,11 @@ namespace fastllm {
         if (this->weight.dicts.find("rope_ratio") != this->weight.dicts.end()) {
             UpdateSinCos(atof(this->weight.dicts["rope_ratio"].c_str()));
         }
+
+         // 获取 inputIds 的第二个维度大小，存储在 maxLen 中，代表输入序列的最大长度。
         int maxLen = inputIds.dims[1];
+
+        // 声明了一系列 Data 类型的变量，这些变量用于存储中间计算结果。
         Data inputEmbeddings;
         Data attenInput;
         Data qkv, q, k, v;
@@ -99,10 +121,17 @@ namespace fastllm {
         Data mlpInput;
         Data middle, middle2;
         Data temp;
+
+        // 定义一个整型向量，可能用于存储最后的返回结果。
         std::vector<int> lastRet;
+
         // ChatGLMBlock
+        // 调用 GetVersion 函数获取模型的版本。
         int version = GetVersion();
+
+        // 根据版本设置 weightPre 和 weightMiddle 的值，这两个变量会被用于构造权重的名称。
         std::string weightPre, weightMiddle;
+
         if (version == 1) {
             weightPre = "transformer.layers.";
             weightMiddle = ".attention";
@@ -112,13 +141,26 @@ namespace fastllm {
         }
 
         // ChatGLM2
+        // 定义一个 Data 类型的变量 inputIdsPermute，用于存储置换后的输入 ID。
         Data inputIdsPermute;
+
+        // 对 inputIds 进行置换，将batch维度和序列长度维度交换。
+        //【bs, seq_length, hidden_size】->【seq_length, bs, hidden_size】
         Permute(inputIds, {1, 0}, inputIdsPermute);
+
+        // 调用 Embedding 函数，对输入的单词 ID 进行嵌入，生成 inputEmbeddings。
         Embedding(inputIdsPermute, this->weight["transformer" + std::string((version == 2 ? ".embedding" : "")) +
                                                 ".word_embeddings.weight"], inputEmbeddings);
+
+        // 定义一个引用 hiddenStates，指向 inputEmbeddings，
+        // 在后续的操作中，对 hiddenStates 的修改也会改变 inputEmbeddings。
         Data &hiddenStates = inputEmbeddings;
+
+        // 针对每个 Transformer 的 block 进行操作。在每个循环中：
         for (int i = 0; i < block_cnt; i++) {
             ApplyDeviceMap(this->deviceMap, i + 1, block_cnt);
+
+            // 首先，使用 LayerNorm 或 RMSNorm 对 hiddenStates 进行归一化操作，得到 attenInput。
             if (version == 1) {
                 std::string inputLNWeightName = "transformer.layers." + std::to_string(i) + ".input_layernorm.weight";
                 std::string inputLNBiasName = "transformer.layers." + std::to_string(i) + ".input_layernorm.bias";
@@ -128,6 +170,8 @@ namespace fastllm {
                         "transformer.encoder.layers." + std::to_string(i) + ".input_layernorm.weight";
                 RMSNorm(hiddenStates, weight[inputRMSWeightName], 1e-5, attenInput);
             }
+
+            // 使用 Linear 函数对 attenInput 进行线性变换，得到 qkv。
             std::string qkvWeightName = weightPre + std::to_string(i) + weightMiddle + ".query_key_value.weight";
             std::string qkvBiasName = weightPre + std::to_string(i) + weightMiddle + ".query_key_value.bias";
             if (!adapterName.empty()) {
@@ -143,6 +187,9 @@ namespace fastllm {
             } else {
                 Linear(attenInput, weight[qkvWeightName], weight[qkvBiasName], qkv);
             }
+
+            // 对 qkv 进行一些操作（如 Reshape、Split、RotatePosition2D
+            // 或 NearlyRotatePosition2D），得到 Q、K、V。
             if (version == 1) {
                 qkv.Reshape({qkv.dims[0], qkv.dims[1], num_attention_heads, -1});
                 int per = qkv.dims.back() / 3;
@@ -163,7 +210,17 @@ namespace fastllm {
                 fastllm::NearlyRotatePosition2D(k, positionIds, sinData, cosData, rotary_dim);
             }
 
+            // q, k, v, shape => 【seq_length, batch, num_attention_head, hidden_size / num_attention_head】
+
+            // 从 pastKeyValues 中获取第 i 个元素，该元素是一个 pair，将其两个元素分别赋给
+            // pastKey 和 pastValue，注意这里使用了引用，所以对 pastKey 和 pastValue
+            // 的修改会影响 pastKeyValues。
             Data &pastKey = pastKeyValues[i].first, &pastValue = pastKeyValues[i].second;
+
+            // 如果 GetKVCacheInCPU() 返回 true，则将 pastKey 和 pastValue 的 lockInCPU
+            // 属性设置为 true，这可能意味着这两个数据将被锁定在 CPU 上；
+            // 否则，将 pastKey 和 pastValue 移动到 CUDA 设备上，
+            // 这可能意味着这两个数据将被移动到 GPU 上进行计算。
             if (GetKVCacheInCPU()) {
                 pastKey.lockInCPU = true;
                 pastValue.lockInCPU = true;
@@ -172,16 +229,27 @@ namespace fastllm {
                 pastValue.ToDevice(DataDevice::CUDA);
             };
 
+            // 调整 K 和 V 的形状。
             k.Resize({k.dims[0], k.dims[1] * k.dims[2], k.dims[3]});
             v.Resize({v.dims[0], v.dims[1] * v.dims[2], v.dims[3]});
 
+            // 对 K 和 V 进行置换，将batch维度和序列长度维度交换。
+            // 【seq_length, batch * num_attention_head, hidden_size / num_attention_head】=>
+            // 【batch * num_attention_head, seq_length, hidden_size / num_attention_head】
             PermuteSelf(k, {1, 0, 2});
             PermuteSelf(v, {1, 0, 2});
 
+            // 定义一个变量 unitLen，并赋值为 64。#ifdef USE_CUDA 判断是否定义了
+            // USE_CUDA，如果定义了，则将 unitLen 设置为 128。这个变量可能与后面的内存扩展有关。
             int unitLen = 64;
 #ifdef USE_CUDA
             unitLen = 128;
 #endif
+            // 接下来的两个 while 循环对 pastKey 和 pastValue 进行扩展。
+            // 具体来说，如果 pastKey 或 pastValue 的大小小于 K 或 V 的大小，
+            // 则将 pastKey 或 pastValue 的大小扩展到满足需要的最小值。
+            // 这里的 unitLen 可能是为了保证扩展后的大小是 unitLen 的整数倍，以提高内存访问效率。
+            // 这里扩展的原因是因为KV Cache会把pastKey，pastValue越concat越大，所以需要动态扩容
             while ((pastKey.dims.size() == 0 &&
                     (pastKey.expansionDims.size() == 0 || k.dims[1] > pastKey.expansionDims[1]))
                    || (pastKey.dims.size() > 0 && (pastKey.expansionDims.size() == 0 ||
@@ -215,27 +283,47 @@ namespace fastllm {
                 }
                 pastValue.Expansion(newDims);
             }
+
+            // KV Cache的concat过程
             CatDirect(pastKey, k, 1);
             CatDirect(pastValue, v, 1);
+
+            //q.shape 【seq_length, batch, num_attention_head, hidden_size / num_attention_head】
+            // outputSize 【batch, num_attention_head, query seq_length, pastKey seq_length】
             std::vector<int> outputSize = {q.dims[1], q.dims[2], q.dims[0], pastKey.dims[1]};
+
+            // q.shape 【seq_length, batch * num_attention_head, hidden_size / num_attention_head】
             q.Reshape({q.dims[0], q.dims[1] * q.dims[2], q.dims[3]});
+            // q.shape 【batch * num_attention_head, seq_length, hidden_size / num_attention_head】
             PermuteSelf(q, {1, 0, 2});
             //Attention(q, pastKey, pastValue, attentionMask, contextLayer, q.dims[0] / pastKey.dims[0], 1.0 / scale_attn, 1);
 
 
             // 1.2 Attention
             // 1.2.0 q * k^T
+            // q.shape 【batch * num_attention_head， query seq_length， hidden_size / num_attention_head】
             q.Reshape({pastKey.dims[0], -1, q.dims[2]});
+
+            // pastKey.shape 【batch * num_attention_head， pastKey seq_length，hidden_size / num_attention_head】
+            // pastKey^T.shape 【batch * num_attention_head，hidden_size / num_attention_head，pastKey seq_length】
+            // attnProbs.shape 【batch * num_attention_head，query seq_length, pastKey seq_length】
             MatMulTransB(q, pastKey, attnProbs, 1.0 / (scale_attn * (i + 1)));
             attnProbs.Reshape(outputSize);
 
             // 1.2.1 Mask
+            // 如果 attentionMask 的维度不为0，那么就对注意力概率（attnProbs）应用 attentionMask，
+            // 这是注意力机制中的一个重要步骤，可以屏蔽掉一些不需要的信息。
             if (attentionMask.dims.size() != 0) {
                 AttentionMask(attnProbs, attentionMask, -10000);
             }
+
             // 1.2.2 softmax
+            // 将注意力概率与i + 1相乘，然后对结果应用 softmax 函数，使得所有的注意力概率之和为 1。
             Mul(attnProbs, i + 1, attnProbs);
             Softmax(attnProbs, attnProbs, -1);
+
+            // 定义输出的大小，然后根据这个大小重新reshape attnProbs。
+            // outputSize.shape [1, batch * num_attention_head, query seq_length, pastKey seq_length]
             outputSize = {1, pastValue.dims[0], q.dims[1], pastValue.dims[1]};
             attnProbs.Reshape({outputSize[0] * outputSize[1], outputSize[2], -1});
             // 1.2.3 prob * v
@@ -284,7 +372,10 @@ namespace fastllm {
             }
         }
 
+        // 定义 logits 和 topk，这可能是为了保存模型的输出和最终的预测结果。
         Data logits, topk;
+        // 接下来的代码块根据 version 的值进行不同的操作，主要包括应用层归一化和线性变换，
+        // 得到模型的输出 logits。
         if (version == 1) {
             LayerNorm(hiddenStates, weight["transformer.final_layernorm.weight"],
                       weight["transformer.final_layernorm.bias"], -1, hiddenStates);
@@ -302,6 +393,9 @@ namespace fastllm {
                 memcpy((float*)(*retLogits)[b]->data(), ((float*)logits.cpuData) + base * size, size * logits.unitSize);
             }
         }
+
+        // 如果生成配置指定了简单的贪心策略，那么就从 logits 中找出最大的值作为预测结果；
+        // 否则，使用 LLMSampling 函数根据 logits 和生成配置来选择预测结果。
         if (generationConfig.IsSimpleGreedy()) {
             TopK(logits, topk, 1);
             topk.ToDevice(DataDevice::CPU);
@@ -317,6 +411,8 @@ namespace fastllm {
         }
         return lastRet;
     }
+    //还有一个同名的ForwardBatch函数，
+    //和上面这个函数的区别在于它支持对不同的seq_length组的batch进行推理，简单来说就是在上面的基础上对batch进行了一个loop。
 
     std::vector <int> ChatGLMModel::ForwardBatch(
             int batch,
@@ -709,9 +805,13 @@ namespace fastllm {
                                      const std::map <std::string, int> &params,
                                      Data &inputIds, Data &attentionMask, Data &positionIds) {
         inputIds.ToDevice(DataDevice::CPU);
+
+        // 将 attentionMask 和 positionIds 移动到 CPU 设备上。
         attentionMask.ToDevice(DataDevice::CPU);
         positionIds.ToDevice(DataDevice::CPU);
 
+        // 在模型的权重字典中查找“gmask_token_id”，如果找到了就将其值转化为整数，
+        // 如果没找到就将其设为130001。
         int gmask_token_id = this->weight.dicts.find("gmask_token_id") != this->weight.dicts.end() ?
                              atoi(this->weight.dicts["gmask_token_id"].c_str()) : 130001;
         int index = params.find("index")->second;
@@ -719,6 +819,7 @@ namespace fastllm {
 
         if (index == 0) {
             for (auto &ids: inputTokens) {
+                // 根据版本号，在 ids 的末尾或开头插入特定的整数值。
                 if (GetVersion() == 1) {
                     ids.push_back(gmask_token_id);
                     ids.push_back(bos_token_id);
@@ -730,7 +831,6 @@ namespace fastllm {
                 }
             }
 
-
             int seqLen = inputTokens[0].size();
             std::vector<float> vmask = std::vector<float>(seqLen * seqLen, 0);
             std::vector<float> vpids = std::vector<float>(seqLen * 2, 0);
@@ -738,9 +838,12 @@ namespace fastllm {
                 vmask[i * seqLen + seqLen - 1] = 1;
                 vpids[i] = i;
             }
+
+            // 为 vmask 和 vpids 初始化值。
             vpids[seqLen - 1] = seqLen - 2;
             vpids[seqLen * 2 - 1] = 1;
 
+            // 如果版本号为 2，那么重新为 vmask 和 vpids 分配值。
             if (GetVersion() == 2) {
                 for (int i = 0; i < seqLen; i++) {
                     vpids[i] = i;
@@ -750,11 +853,14 @@ namespace fastllm {
                 }
             }
 
+            // 根据 ids 创建一个新的 Data 对象，并将其复制给 inputIds。
             inputIds.CopyFrom(Data(DataType::FLOAT32, {1, seqLen}, inputTokens[0]));
             attentionMask.CopyFrom(Data(DataType::FLOAT32, {seqLen, seqLen}, vmask));
             positionIds.CopyFrom(Data(DataType::FLOAT32, {2, seqLen}, vpids));
         } else {
             inputIds.CopyFrom(Data(DataType::FLOAT32, {1, 1}, inputTokens[0]));
+
+            // 更新 attentionMask 和 positionIds。
             attentionMask = Data();
             if (GetVersion() == 1) {
                 positionIds.CopyFrom(Data(DataType::FLOAT32, {2, 1}, {(float) promptLen, (float) (index + 1)}));
@@ -775,6 +881,8 @@ namespace fastllm {
         int batch = inputTokens.size();
         int index = params[0].find("index")->second;
         if (index == 0) {
+            // 在模型的权重字典中查找“gmask_token_id”，如果找到了就将其值转化为整数，
+            // 如果没找到就将其设为130001。
             int gmask_token_id = this->weight.dicts.find("gmask_token_id") != this->weight.dicts.end() ?
                                  atoi(this->weight.dicts["gmask_token_id"].c_str()) : 130001;
             std::vector<int> seqLens;
@@ -876,9 +984,12 @@ namespace fastllm {
     void ChatGLMModel::WarmUp() {
     	printf("Warmup...\n");
 	    Data inputIds = Data(DataType::FLOAT32, {1, 1}, {(float)bos_token_id});
+
+	    // 根据 vmask 和 vpids 创建 attentionMask 和 positionIds。
 	    Data attentionMask = Data(DataType::FLOAT32, {1, 1}, {0});
 	    Data positionIds = Data(DataType::FLOAT32, {2, 1}, {0, 0});
 
+        // 创建一个包含 block_cnt 个空 Data 对象的向量 pastKeyValues。
 	    std::vector <std::pair <Data, Data> > pastKeyValues;
 	    for (int i = 0; i < block_cnt; i++) {
 		    pastKeyValues.push_back(std::make_pair(Data(DataType::FLOAT32),

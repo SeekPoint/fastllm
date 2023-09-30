@@ -57,6 +57,7 @@ namespace fastllm {
     std::string basellm::Response(const std::string &input, RuntimeResult retCb,
                                   const fastllm::GenerationConfig &generationConfig) {
 #ifdef USE_CUDA
+// 清理 CUDA 的大缓冲区。
         FastllmCudaClearBigBuffer();
 #endif
         std::string prompt = input;
@@ -79,22 +80,40 @@ namespace fastllm {
                                                    Data(DataType::FLOAT32)));
         }
 
+        // 定义一个空的字符串 retString，它将用于存储生成的文本。
         std::string retString = "";
+
         std::vector<float> results;
+
+        // 创建一个 LastTokensManager 类型的对象 tokens。该对象用于管理生成过程中的最后一个token。
         LastTokensManager tokens(1, generationConfig.last_n);
         int promptLen = inputTokens[0].size(), index = 0;
         FillLLMInputs(inputTokens, {{"promptLen", promptLen}, {"index", index}}, inputIds, attentionMask, positionIds);
+
+        // 这个循环用于生成文本，直到满足某个退出条件。
         while (true) {
+            // 记录当前时间，可能用于后续计算生成文本所需的时间。
             auto st = std::chrono::system_clock::now();
+
+            // 调用 Forward 函数生成下一个令牌，并将生成的token存储在 ret 中。
             int ret = Forward(inputIds, attentionMask, positionIds, pastKeyValues, generationConfig, tokens);
+
+            // 将生成的token ret 添加到 tokens 对象的第一个单元中。
             tokens.units[0].Push(ret);
+
+            // 如果生成的token ret 是结束token（eos_token_id），则跳出循环。
             if (ret == eos_token_id) {
                 break;
             }
 
+            // 将生成的token ret 添加到 results 向量中。
             results.push_back(ret);
+
+            // 将 results 向量中的token解码为字符串 curString。
             std::string curString = weight.tokenizer.Decode(
                     Data(DataType::FLOAT32, {(int) results.size()}, results)).c_str();
+
+            // 将解码得到的字符串 curString 添加到 retString 中。
             retString += curString;
             if (retCb)
 #ifdef PY_API
@@ -116,6 +135,8 @@ namespace fastllm {
 
             inputTokens[0] = std::vector<float> {(float)ret};
             FillLLMInputs(inputTokens, {{"promptLen", promptLen}, {"index", index}}, inputIds, attentionMask, positionIds);
+
+            // 如果生成的令牌数量 index 已经达到了设定的输出token限制，break
             if (index == generationConfig.output_token_limit) {
                 break;
             }
@@ -141,6 +162,7 @@ namespace fastllm {
     void basellm::ResponseBatch(const std::vector<std::string> &inputs, std::vector<std::string> &outputs,
                                 RuntimeResultBatch retCb, const fastllm::GenerationConfig &generationConfig) {
 #ifdef USE_CUDA
+// 清理 CUDA 的大缓冲区。
         FastllmCudaClearBigBuffer();
 #endif
         
@@ -175,6 +197,7 @@ namespace fastllm {
             }
         }
 
+        // 创建一个包含 block_cnt 个空 Data 对象的向量 pastKeyValues。
         std::vector <std::pair <Data, Data> > pastKeyValues;
         for (int i = 0; i < block_cnt; i++) {
             pastKeyValues.push_back(std::make_pair(Data(DataType::FLOAT32),
@@ -254,6 +277,7 @@ namespace fastllm {
             FillLLMInputsBatch(inputTokens, params, inputIds, attentionMask, positionIds);
             // printf("len = %d, spend %f s.\n", len, GetSpan(st, std::chrono::system_clock::now()));
 
+            // 如果生成的令牌数量 index 已经达到了设定的输出token限制，break
             if (index == generationConfig.output_token_limit) {
                 break;
             }

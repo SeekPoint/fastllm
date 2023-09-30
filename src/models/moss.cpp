@@ -210,6 +210,8 @@ namespace fastllm {
 		size_t pos = input.rfind("time_stamp:");
 		std::string prompt = (generationConfig.enable_hash_id && pos != -1)?  input.substr(0, pos):input;
 		size_t hash_id = std::hash<std::string>{}(input);
+
+		// 对输入的字符串进行编码，得到一个表示输入的整数数组 inputIds。
         Data inputIds = this->weight.tokenizer.Encode(prompt);
 #else
         Data inputIds = this->weight.tokenizer.Encode(input);
@@ -226,10 +228,15 @@ namespace fastllm {
             ((float *) attentionMask.cpuData)[i] = 1;
             ((float *) positionIds.cpuData)[i] = i;
         }
-
+        // 定义一个浮点数向量 results，它将用于存储生成的单词或字符的编码。
         std::vector<float> results;
+
+        // 定义一个空的字符串 retString，它将用于存储生成的文本。
         std::string retString = "";
-		int index = 0;
+        // 定义一个整数变量 index，并初始化为 0。
+        // 这个变量可能用于追踪生成过程中的步骤数或其他类似的目的。
+        int index = 0;
+        // 创建一个 LastTokensManager 类型的对象 tokens。该对象用于管理生成过程中的最后一个token。
         LastTokensManager tokens (1, generationConfig.last_n);
         while (true) {
             int ret = Forward(inputIds, attentionMask, positionIds, pastKeyValues, generationConfig, tokens);

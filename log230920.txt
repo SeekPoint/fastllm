@@ -1,0 +1,2212 @@
+PS C:\yk_repo\fastllm\fastllm - 副本> git log
+commit 5cb58c09f57e9643f7aed66bf2073c30b07a1623 (HEAD -> master, origin/master, origin/HEAD)
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Sep 19 18:53:39 2023 +0800
+
+    增加batch限制和token总容量限制
+
+commit 1b81a4ea702e46e1f46ffa57f31d5dfe555a469e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Sep 19 18:28:20 2023 +0800
+
+    优化chatglm.cpp
+
+commit cb5ae0a6277c1d14eb74fd00c3ae683d58630137
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Sep 19 18:24:46 2023 +0800
+
+    expansion的时候绕过cuda缓存
+
+commit ee9934c040b8a5283cfca096f0695e1d44f4fec9
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Sep 19 18:23:18 2023 +0800
+
+    增加直接分配cuda memory的接口
+
+commit d324b90659b7fcc6c009d155d0727678aca33436
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Sep 14 11:27:44 2023 +0800
+
+    增加一个copyKVCache算子
+
+commit 28c9ef55c8a0239a1d72b7b36d7da1b15f45c0d3
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Sep 7 23:17:48 2023 +0800
+
+    update apiserver
+
+commit 382ff078e2efa5bd5b6f9edac406ecccf5892deb
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Sep 7 16:28:36 2023 +0800
+
+    fix
+
+commit bf0be781e2106b1429f1be7cf829b9d7c26bf75d
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Sep 7 16:28:17 2023 +0800
+
+    add attention batch operator
+
+commit 2defaeb850df454506ae7bc189100f63c5abd57f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Sep 7 16:27:31 2023 +0800
+
+    一个简单的batch attention实现
+
+commit 0acbcf648e7703fe20d1e87f6ba7aeef3cc56175
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Sep 4 19:05:29 2023 +0800
+
+    matmul batch 尝试用一些简单的优化
+
+commit fd8abf5daaeb1e9c2948bff9cb0f3cc3db86436a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 30 14:14:53 2023 +0800
+
+    初步的api server (bug还很多，测试中)
+
+commit d7e3335ce97dad332240f3ab2593d1ffdd154449
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 30 14:13:58 2023 +0800
+
+    prompt单独处理，节约一点显存
+
+commit 8286d1dfca93cd92cfaf5523046ecdab6714b235
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 30 14:12:51 2023 +0800
+
+    cudaBuffer空闲>1G时清扫
+
+commit 857a9785b542d1f302bb42ce0fcb62a3e9047750
+Merge: 3dc6339 0f4b921
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 25 14:03:29 2023 +0800
+
+    Merge branch 'master' of https://github.com/ztxz16/fastllm
+
+commit 0f4b921026b072304af9064af6f42b334d27b28b
+Merge: 2162fae 3e020b8
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 25 13:54:08 2023 +0800
+
+    Merge pull request #279 from Vinlic/master
+
+    添加QWenModel到pybinding
+
+commit 2162faea084293225d72e754fee20ba8fa6ff9c6
+Merge: 576cbac 1fef022
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 25 13:53:49 2023 +0800
+
+    Merge pull request #282 from TylunasLi/win64
+
+    Win32Demo工程增加Qwen模型
+
+commit 3dc6339e6fcc2a10eeb9e4aa9e419d12a0434c99
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 25 13:42:54 2023 +0800
+
+    GLM少许优化
+
+commit 8c88a2e5f8796aae8d570e8ac7f04a120551154a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 24 14:58:21 2023 +0800
+
+    fix
+
+commit 1430c5628b8fdf092047f2de16bf71623cc079c9
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 24 14:33:51 2023 +0800
+
+    attention先提交以下（暂未使用）
+
+commit 38b1e9c2c249305fd3a387a0b069dfea6f9b64aa
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 24 14:32:25 2023 +0800
+
+    初步的attention算子实现（未优化）
+
+commit 3e020b8abaf995a6b853eac802fe9fba52e436bf
+Author: Vinlic <vinlic@vinlic.com>
+Date:   Wed Aug 23 10:58:44 2023 +0800
+
+    添加QWenModel到pybinding
+
+commit 1fef022c5f32a16be0128e1acf217bad95197250
+Author: cgli <cgli@iyunwen.com>
+Date:   Wed Aug 23 00:09:54 2023 +0800
+
+    Win32Demo及工程增加千问模型
+
+commit 239aa19c018304b4b837cccc2bf697b07338cc99
+Author: cgli <cgli@iyunwen.com>
+Date:   Sat Aug 12 12:53:42 2023 +0800
+
+    benckmark支持Windows
+
+commit 576cbac18aef7bc7de4942d4bb45f5992a2d652a
+Merge: 8d87997 c94fd6b
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 18 17:54:56 2023 +0800
+
+    Merge branch 'master' of https://github.com/ztxz16/fastllm
+
+commit 8d87997262e4729f43790e9ec1bf3945e2dfdfac
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 18 17:54:37 2023 +0800
+
+    fix
+
+commit c94fd6bbb264e2253c70707f7e00c05b82f03c53
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 18 16:46:53 2023 +0800
+
+    Create LICENSE
+
+commit feffae3d30a79f2b55ee3dcc62ad6dfe04117e5e
+Merge: c6db2e0 8a76427
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 18 10:17:39 2023 +0800
+
+    Merge pull request #266 from siemonchan/qwen
+
+    PEFT支持
+
+commit c6db2e0a544fc4dc847ee84e7e172e51dcdc147e
+Merge: cd3e85e b3c2c0a
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 18 10:17:29 2023 +0800
+
+    Merge pull request #264 from azhe12/master
+
+    优化: 注释掉chatglm中web_demo.py这一行model.eval()，否则会报错。
+
+commit cd3e85efad5193da923c18115ef0d1b1813c8750
+Merge: baabf9c 250a2a9
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Aug 18 10:17:20 2023 +0800
+
+    Merge pull request #265 from dongkid/master
+
+    添加github action同步编译
+
+commit 8a764276de56dcb8de79765c48b46c58715bed7f
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Fri Aug 18 01:53:38 2023 +0000
+
+    将fastllm读取模型peft config的方式改为从dict中读取
+
+commit f8476666e4af13f57baeb79872333151a6c50c9a
+Merge: 63c9387 baabf9c
+Author: siemon <siemon1996@hotmail.com>
+Date:   Fri Aug 18 09:50:43 2023 +0800
+
+    Merge branch 'ztxz16:master' into qwen
+
+commit 250a2a99ba9294e969be8fceeb3f281379086376
+Author: dongkid <80565742+dongkid@users.noreply.github.com>
+Date:   Fri Aug 18 08:47:01 2023 +0800
+
+    Create Build.yml
+
+    添加github action同步编译
+
+commit baabf9c4671cd29334013491344c5e215c510d7c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 18 01:14:24 2023 +0800
+
+    优化一下qwen模型首token速度
+
+commit b3c2c0a3db74c7bfb90a04e689ec38052659673e
+Author: liuyuanzhe <liuyuanzhe@meituan.com>
+Date:   Thu Aug 17 23:14:27 2023 +0800
+
+    优化: 注释掉chatglm中web_demo.py这一行model.eval()，否则会报错。
+
+commit 63c93878fe6f92f60366aed610dac5479a1ab9cb
+Merge: ec31a68 1505725
+Author: siemon <siemon1996@hotmail.com>
+Date:   Thu Aug 17 09:40:14 2023 +0800
+
+    Merge branch 'ztxz16:master' into qwen
+
+commit 15057252fcb09f0e702313bf1d05f90a2b1a9d3a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 16 19:22:05 2023 +0800
+
+    增加部分算子的fp16 cpu实现
+
+commit 54438c28fff0b70118d74954ac64318657530eeb
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 16 19:21:13 2023 +0800
+
+    增加cuda apply logn算子
+
+commit 0268a250c629c5ee0a5ff1880973db3826d52855
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 16 19:01:23 2023 +0800
+
+    fix pybinding
+
+commit ec31a6812cc102cbf31a422822b9e03f6db998c1
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Wed Aug 16 08:08:29 2023 +0000
+
+    初步支持huggingface peft
+
+commit a0cbbb61cb314921af835ce917910f190e4303e3
+Merge: a56004b d27a776
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 16 10:47:00 2023 +0800
+
+    Merge pull request #249 from siemonchan/qwen
+
+    修复千问模型
+
+commit d27a7766bbeafe2946716f39a44918df812d5af7
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Wed Aug 16 02:38:30 2023 +0000
+
+    修复QWenBase模型generate时停不下来的问题；
+    增加QWen-7B模型的cmmlu测试结果
+
+commit 6647069d25afeb21cba06f1ad9e64708d9980fc9
+Merge: b7b594a a56004b
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Wed Aug 16 02:30:59 2023 +0000
+
+    Merge branch 'master' of https://github.com/siemonchan/fastllm into qwen
+
+commit a56004b5e577cc535783ffaf1564af8d99187cc4
+Merge: c159f5e 825b34a
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 16 10:21:06 2023 +0800
+
+    Merge pull request #245 from GainLee/master
+
+    修复Android的编译错误
+
+commit c159f5e5332c4a22c2e7636332fa3bb48b69d8d7
+Merge: f4a3547 cfebf2c
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 16 10:20:25 2023 +0800
+
+    Merge pull request #244 from siemonchan/qwen
+
+    修复千问低内存模式
+
+commit b7b594a1a867864e0287d5a6c5776ceb71c5a402
+Merge: cfebf2c f4a3547
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Tue Aug 15 08:31:46 2023 +0000
+
+    Merge branch 'master' into qwen
+
+commit f4a35471b940d12f8e5ab75aee8c4765ef087ab8
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Aug 15 15:54:32 2023 +0800
+
+    fix 模型转换
+
+commit 825b34a585474299550662e958b4d8b0774d9767
+Author: Gain <perfecter.gen@gmail.com>
+Date:   Tue Aug 15 15:07:11 2023 +0800
+
+    修复Android的编译错误
+
+commit cfebf2c4255890496ef9f97d8be827a953462231
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Tue Aug 15 05:31:03 2023 +0000
+
+    修复千问低内存模式
+
+commit 0e64452ad79fa0165bf09a858bd3b22fed0a18fa
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Aug 15 10:39:13 2023 +0800
+
+    fix
+
+commit 7d43c58381f7795e8176bf89818014401c85afcd
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Aug 15 10:31:59 2023 +0800
+
+    fix
+
+commit 8056b79370c4b41a32ccd8f967d4fcdce4fd1e37
+Merge: dd5bb34 b4548db
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Aug 15 10:30:07 2023 +0800
+
+    Merge branch 'master' of https://github.com/ztxz16/fastllm
+
+commit dd5bb3412125d48b26fa9c7f5a845f5cca7d60dd
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Aug 15 10:29:58 2023 +0800
+
+    初步增加float16中间值转换
+
+commit b4548db40ca36f9b36fac4550dc2f182fb03053e
+Merge: b5f0942 41dcb1c
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Aug 15 10:23:20 2023 +0800
+
+    Merge pull request #238 from smallflyingpig/master
+
+    服务部署的动态批处理，大大增加后端服务并发处理能力。
+
+commit 41dcb1c13120a51a810a153d05307eabdffe010d
+Merge: 23572ba b5f0942
+Author: Jiguo Li <9069037+smallflyingpig@users.noreply.github.com>
+Date:   Mon Aug 14 15:17:05 2023 +0800
+
+    Merge branch 'master' into master
+
+commit b5f09428715066e253d2730083a646b8e4b9e60b
+Merge: 4ba5fd5 ed3fb8e
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 14 14:18:17 2023 +0800
+
+    Merge pull request #243 from siemonchan/qwen
+
+    支持千问的两行代码加速
+
+commit ed3fb8e16a87b7a875153d5bb84c10ca3e54ccc8
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Mon Aug 14 06:15:18 2023 +0000
+
+    支持千问的两行代码加速
+
+commit 4ba5fd53fb11f1ffc6abc391472b1de9e06195ab
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Aug 14 13:51:50 2023 +0800
+
+    fix
+
+commit f21a17da95c1c5227f1e0195b32b6680038c476b
+Merge: a48e603 45c5010
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 14 11:22:39 2023 +0800
+
+    Merge pull request #242 from siemonchan/qwen
+
+    support QWen
+
+commit 45c5010c92dd7a259d91bd432a5fdad44eb0bb37
+Author: siemon <chen.jiaqi@think-force.com>
+Date:   Mon Aug 14 03:17:04 2023 +0000
+
+    support QWen
+
+commit a48e6035057556a450fc656c03b946e27648fe60
+Merge: 2c4433e 892c2a6
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Aug 14 10:49:24 2023 +0800
+
+    Merge branch 'master' of https://github.com/ztxz16/fastllm
+
+commit 2c4433e38fb51e51d7a03d0d9ed4bd9b64113c21
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Aug 14 10:48:51 2023 +0800
+
+    fix top_p
+
+commit 892c2a63ae0242fc67986826077d9a44e3bbf608
+Merge: 4c67a46 3659d1e
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 14 10:17:28 2023 +0800
+
+    Merge pull request #230 from ArtificialZeng/master
+
+    Update README.md
+
+commit 4c67a464e4f688e6297ac277cc759f65b5e850b7
+Merge: ece4072 3e7e6d3
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 14 10:16:47 2023 +0800
+
+    Merge pull request #227 from peter4431/master
+
+    Docker 编译和运行
+
+commit ece40722b68f75e4798609a95b5e3e7ffa98aca4
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Aug 14 00:48:01 2023 +0800
+
+    update test for baichuan
+
+commit 6e211bc9d627a4aaf60cbd20b51d8f713944da50
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Aug 12 16:35:14 2023 +0800
+
+    对齐百川模型中的一些细节
+
+commit 23572ba5f9839a79286b35c7842dd01446ff9119
+Author: lijiguo5 <lijiguo5@jd.com>
+Date:   Fri Aug 11 14:21:42 2023 +0800
+
+    update readme
+
+commit 2268f4e17c2455be3902a18a7bdabe1c6e85d37a
+Author: lijiguo5 <lijiguo5@jd.com>
+Date:   Fri Aug 11 11:12:55 2023 +0800
+
+    服务部署的动态批处理，大大增加后端服务并发处理能力。实测A100 40G 16用户并发仅仅比单用户平均响应时间提升一倍(max_batch_size=32)。
+
+commit 995128e47bf8a70fe2549129f38f25d11f71e4a1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 10 00:20:07 2023 +0800
+
+    pybinding增加make_input接口，用于填充prompt
+
+commit 3f12eab302d53502b9cd327304eb82bd40511dac
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 9 23:59:47 2023 +0800
+
+    增加output_logits接口直接输出logits （测试中）
+
+commit 3659d1ed13be27a504cff946b96d9848379baac1
+Author: Artificial <2119516028@qq.com>
+Date:   Wed Aug 9 22:36:50 2023 +0800
+
+    Update README.md
+
+    注释错误，没有baichuan_export.py该文件
+
+commit 3e7e6d3087e74cb6202b241471ca50db9e8328d6
+Author: wyangubuntu <yangwang@sagigames.cn>
+Date:   Tue Aug 8 21:03:34 2023 +0800
+
+    Docker 编译和运行
+
+commit 468500ef8efeebc74a821073d6afe52ec3d680dc
+Merge: 7656348 eaba837
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 7 11:36:35 2023 +0800
+
+    Merge pull request #217 from TylunasLi/win64
+
+    更新 Win32Demo 以及 Windows 下编译方法
+
+commit 765634818d60f8b0bedee757ec078ba8ce202072
+Merge: a3c7546 132cb31
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 7 11:36:13 2023 +0800
+
+    Merge pull request #211 from lxrite/fix_mmap_segmentation_fault
+
+    修复 USE_MMAP=ON 模型加载过程中发生段错误 #193
+
+commit a3c7546435aaa6f21c2fac8f32b9dbccae153f10
+Merge: 3634334 13148c0
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Aug 7 11:35:38 2023 +0800
+
+    Merge pull request #219 from ColorfulDick/master
+
+    修复basellm中因使用了std::stringstream却没有声明sstream的bug;修复了prompt这个变量声明了两次的bug；
+
+commit 13148c027c796fe824f61466056aab50122050ab
+Author: zhongtong <1123063417@qq.com>
+Date:   Mon Aug 7 10:53:40 2023 +0800
+
+    修复basellm中因使用了std::stringstream却没有声明sstream的bug;修复了prompt这个变量声明了两次的bug；
+
+commit 3634334cedc4f0c2271c3b1e51d7eb0c432ce8bd
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Aug 6 00:14:30 2023 +0800
+
+    fix moss
+
+commit 3b7c5be3c71d1b110376c65f15928cf0994eac6e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 4 18:52:08 2023 +0800
+
+    baichuan先切回默认模型
+
+commit 4270d9663d91c2f4a9dba1a685ee18cca16f0b39
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 4 15:14:51 2023 +0800
+
+    修复moss模型跑不了的bug
+
+commit ef899c2c88ca4fda93e2f7e400827885115b7382
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 4 15:12:41 2023 +0800
+
+    tokenizer加入type以区分不同的分词器
+
+commit dcaff0f5a716cd7528a6eb2de4e2ede5d5c71173
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Aug 4 11:45:41 2023 +0800
+
+    fix
+
+commit 132cb31bac17bc413198db0f5155ec59544df50d
+Author: lxrite <lxrite@gmail.com>
+Date:   Thu Aug 3 19:22:04 2023 +0800
+
+    修复 USE_MMAP=ON 模型加载过程中发生段错误 #193
+
+commit 4f2bd50f98101224420b3f18ca27b48a7200209e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 3 18:12:23 2023 +0800
+
+    chatglm的动态batch实现放到基类里
+
+commit 355e784892dacf7df6aa62828f4c0e3c56355e66
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 3 15:02:31 2023 +0800
+
+    静态batch改用基类函数
+
+commit 14abde583f9829da9354323efc6b2de90cc44d0c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Aug 3 11:55:16 2023 +0800
+
+    chatglm改用基类的response
+
+commit eb2039e8b86f2253675115a6ba2bb9dff792a0bb
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 2 17:29:59 2023 +0800
+
+    fix
+
+commit 1ed3fcc4712ff3a313aa1ba96ee5efea635ab2b9
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 2 17:14:07 2023 +0800
+
+    支持chatglm2-6b-32k
+
+commit 2bba479d3161d27fd3f20b0a6832801586e64850
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 2 16:01:50 2023 +0800
+
+    fix
+
+commit 5964fdd721e908f789e819e3295bf27793106181
+Merge: 7a3d71a 95e132d
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 2 14:55:55 2023 +0800
+
+    Merge pull request #186 from denghongcai/feat-optimize-web-demo
+
+    feat: 🎸 optimize web demo
+
+commit 7a3d71a0b265cc5265086ff7dc148c7475061f7f
+Merge: b65916a bdc758d
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 2 14:47:01 2023 +0800
+
+    Merge pull request #188 from denghongcai/fix-android-build
+
+    fix: 🐛 android build
+
+commit b65916a2f2e171a3a6258da5b8efde161d055cea
+Merge: eba66e0 6d1f14a
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 2 14:46:49 2023 +0800
+
+    Merge pull request #195 from TylunasLi/master
+
+    fix #175 修复ChatGLMModel构造函数判断版本的逻辑错误，支持低内存模式加载ChatGLM2模型
+
+commit eba66e0799c6a4d248f82dfa4fd1e32a3aa5302e
+Merge: b182feb f88563a
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 2 14:46:06 2023 +0800
+
+    Merge pull request #200 from acupofespresso/patch-1
+
+    Update baichuan2flm.py
+
+commit b182febbf8131ac9ea6e8997bf409930900c4eba
+Merge: 8725348 93a902b
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Aug 2 14:45:40 2023 +0800
+
+    Merge pull request #204 from caseylai/master
+
+    修复一个因repeat_penalty大于1导致的segmentation fault错误
+
+commit 8725348216d0a65e0acc68df81f54f935d352cbd
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Aug 2 11:25:15 2023 +0800
+
+    更新c++的tokenizer
+
+commit eaba837afe7cce3e1610d3e20b926844fd0bf007
+Author: cgli <cgli@iyunwen.com>
+Date:   Tue Aug 1 17:36:05 2023 +0800
+
+    修改Win32 Demo，与main同步。
+
+commit 93a902b1aac84776b9a84fd3230acf24047eb5aa
+Author: k <k@yiducloud.cn>
+Date:   Tue Aug 1 16:48:03 2023 +0800
+
+    fix bug of casuing segmentation fault when adjusting repeat_penalty greater than 1.0
+
+commit 226ff70eca8de75f86e6ab5208c77120fc6c7efa
+Author: cgli <cgli@iyunwen.com>
+Date:   Mon Jul 31 21:33:46 2023 +0800
+
+    增加适配新版本的Visual Studio编译工程
+
+commit f88563aff8c10fdc5a9a23f1415857ef8185482f
+Author: acupofespresso <acupofespresso@gmail.com>
+Date:   Mon Jul 31 21:26:50 2023 +0800
+
+    Update baichuan2flm.py
+
+    Fixed device map error
+
+commit 6d1f14a7a13e0dd180dddcbc18a70ff603a98a9d
+Author: cgli <cgli@iyunwen.com>
+Date:   Sun Jul 30 16:07:49 2023 +0800
+
+    fix #175 修复ChatGLMModel构造函数判断版本的逻辑错误，支持低内存模式加载ChatGLM2模型
+
+commit 44cc68caa62ca980c5b76efb5db2fed85667e090
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Jul 29 15:58:32 2023 +0800
+
+    fix readme
+
+commit bff6f0a6d97f3e5128c6c8abff15076febf74751
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 28 20:10:15 2023 +0800
+
+    fix
+
+commit a68ad8d6b17a9275f82a24dcd6fc2d895fd5e261
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 28 20:07:40 2023 +0800
+
+    更新CMMLU测试程序
+
+commit a95db7cbe2af0eba097f915428c267a6d3ae8234
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 28 20:01:54 2023 +0800
+
+    benchmark程序区分prompt speed
+
+commit 23af87b42ce4f1428a4ab133802eded81c3114bc
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 28 20:00:43 2023 +0800
+
+    强制写Windows的编码
+
+commit bdc758d1b69c2a20a6bbc2b88022201aa2e9c5f0
+Author: Hongcai Deng <admin@dhchouse.com>
+Date:   Fri Jul 28 19:16:38 2023 +0800
+
+    fix: 🐛 android build
+
+commit 95e132da8b0554a34422de28a0ee7543301a7641
+Author: Hongcai Deng <admin@dhchouse.com>
+Date:   Fri Jul 28 17:12:57 2023 +0800
+
+    feat: 🎸 optimize web demo
+
+commit 9b40b4f5c36ddcd914314a5dcafadd5755b90fba
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 28 11:48:00 2023 +0800
+
+    修改直接导出int4的量化方式，提升精度
+
+commit 270dd666fbf92ac8c90208cb9f24c4f94c2452c2
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 27 18:54:22 2023 +0800
+
+    update readme
+
+commit 993322b2e843b568d270a172560e477702105746
+Merge: 8225458 a399ece
+Author: ztxz16 <410644548@qq.com>
+Date:   Thu Jul 27 18:42:13 2023 +0800
+
+    Merge pull request #163 from kiranosora/master
+
+    fix problems in issue #91 && update web_api_client.py
+
+commit 8225458c05dc3ec4f5f84753bb652153f067d5e0
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 27 18:17:48 2023 +0800
+
+    支持直接转换chatglm的int8, int4模型
+
+commit e1b42c14daf8f777f9315ec9177c5edf1d43312b
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 27 01:22:38 2023 +0800
+
+    fix prompt
+
+commit 8cc453a32f9881737eed5a51e1cc1d69a36b672c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 26 15:08:24 2023 +0800
+
+    更新Readme以及转换脚本
+
+commit 530afacc5223d9f1b6007267cef84e0b720314f1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 26 14:24:09 2023 +0800
+
+    string_view换成string，防止一些情况编译不过
+
+commit 01155227ac16cb195c749e019d78243fea998288
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 25 18:09:21 2023 +0800
+
+    pybinding支持set_device_map
+
+commit 24683e665b00b8e0e8c933e450aabc0a7e170e4a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 25 17:31:04 2023 +0800
+
+    fastllm_pytools支持多卡接口
+
+commit ddfb81ccfaccdefb734854bd9f145bd44d3dfea7
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 25 14:38:16 2023 +0800
+
+    初步支持多卡部署
+
+commit 74c6e4f765cbf37ab1d79ed472cae02cae275e3a
+Author: huangyuyang <410644548@qq.com>
+Date:   Mon Jul 24 10:15:38 2023 +0800
+
+    fix
+
+commit a399ece518ff660c763277760b1c6c6143a4bf0f
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Sun Jul 23 22:15:29 2023 +0800
+
+    update web_api_client.py
+
+commit e456d391cb5c2e9902bdf99cd920b6c32460e7a1
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Sun Jul 23 21:57:10 2023 +0800
+
+    fix problems in issue #91
+
+commit d355accc8a526d1760c5aa6331873f48f98442c5
+Merge: f095443 920bf0f
+Author: ztxz16 <410644548@qq.com>
+Date:   Sun Jul 23 12:16:20 2023 +0800
+
+    Merge pull request #159 from bjmsong/master
+
+    add mmap
+
+commit f0954433d0ad53eef9290e2fc46bff1f4024c522
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jul 23 12:13:37 2023 +0800
+
+    取buffer的时候加上引用
+
+commit 1ae1a0917149bc77e42991a84a25ebb25a3b1eb0
+Merge: 12719a7 630e71b
+Author: ztxz16 <410644548@qq.com>
+Date:   Sun Jul 23 11:47:18 2023 +0800
+
+    Merge pull request #162 from felix-fei-fei/master
+
+    修改cuda kernel支持多卡
+
+commit 630e71b41dc22c80f48da6b9b3b6797f4e96a564
+Author: hanfei <admin@crazyqq.com>
+Date:   Sun Jul 23 03:33:49 2023 +0000
+
+    修改cuda kernel支持多卡
+
+commit 12719a79fffe3dd7fbc8a305fca23db534df3c59
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Jul 22 16:30:48 2023 +0800
+
+    优化permute
+
+commit 0c827522a7892205616ca8b05f1cc7a966d20396
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 22:45:16 2023 +0800
+
+    torch2flm增加直接导出int4, int8的功能
+
+commit 82c9e6e8a544127ae33bfbd59ea6aaa61a2684e4
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 18:41:40 2023 +0800
+
+    torch2flm增加直接导出fp16文件的功能
+
+commit f9b76d9b6b6177662fa3423be985c53d40767383
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 17:03:41 2023 +0800
+
+    fastllm_pytools中llm的response也使用动态batch接口
+
+commit 89095f0d3a8587008f0639b6de25111991ea287f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 17:03:17 2023 +0800
+
+    单batch优化
+
+commit 43be7805fdff04a1518d15b539020ec4ae9a5718
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 15:36:44 2023 +0800
+
+    增加一个虚拟的eval接口（啥也不做）
+
+commit 6ca947e489bd15d31bf4145b6b6956459f1c13a0
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 14:35:06 2023 +0800
+
+    更新chatglm的动态batch
+
+commit e0da6b2ce32fd4309041c1292798cc317e7fd3f2
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 21 14:30:27 2023 +0800
+
+    实现初版softmaxBatch, matmulBatch, matmulTransBBatch
+
+commit 1c0f8f567d03ea067f0c42cc75c17ae47910b4e7
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 20 20:09:23 2023 +0800
+
+    实现BatchMemcpy2D
+
+commit 920bf0f66b8561d38cf306624cbd152f1cf1e5ae
+Author: bjmsong <mdattack@126.com>
+Date:   Thu Jul 20 15:56:45 2023 +0800
+
+    add mmap
+
+commit ded336cb68e2713171cb366e825ec897021d876c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 20 15:37:42 2023 +0800
+
+    增加CatDirectBatch, CatBatch和SoftmaxBatch（暂未cuda加速)，修改chatglm
+
+commit 86e4cd933000073f0d39bad23cc6b5df04145e6d
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 20 14:15:22 2023 +0800
+
+    增加MatMulBatch和MatMulTransBBatch（暂未cuda加速)，修改chatglm
+
+commit 9eaab90e8c41ae71ad630db12e1183f35ac11c17
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 20 11:13:25 2023 +0800
+
+    增加BatchOp，BatchOp中如果一个Data是batch的，那么它指向一个二维指针里面存放若干个Data的指针
+
+commit f72a4deb598f779bd0acf81c60aa5fabaa6b1fae
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 21:36:46 2023 +0800
+
+    优化GLM模型的动态batch
+
+commit c2e2c7b79269bf2998f8a67ea9e5d830a9033802
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 21:33:37 2023 +0800
+
+    增加batchMul操作
+
+commit 9589b51092290d087c7cda60a43558481e7ff450
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 21:32:06 2023 +0800
+
+    修改默认的reshape
+
+commit 4cf20d241064d653b9dd7c052aaa496939aa203f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 18:57:55 2023 +0800
+
+    漏提交的文件
+
+commit 0808e26966ac86881e8d5abf0927e8c74c7d7cc1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 18:57:27 2023 +0800
+
+    加入BatchSplit操作
+
+commit 6285a4ed4c7a491e6a3fab325b094f0b7f99b5d2
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 19 14:17:49 2023 +0800
+
+    增加profiler接口
+
+commit ebca07d981930a1e982fa58b33d570df32b4b1da
+Merge: 9258ec8 d0a61cc
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Jul 18 16:43:02 2023 +0800
+
+    Merge pull request #148 from bjmsong/master
+
+    add cuda for fp32
+
+commit 251a5593961b3425663998d9923c82081013a103
+Author: xiongxinlei <xiongxinlei@baidu.com>
+Date:   Thu Jul 13 23:16:53 2023 +0800
+
+    修复ChatGLM模型导出bug
+
+commit eba7a63a0d129bbb41027a1f4252d97c99f1e29c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 13 19:16:17 2023 +0800
+
+    修复chatglm2多线程出错的bug
+
+commit 861071a874fc335cb1efff3e56548b0ad2664d92
+Merge: 34dbd1d 2dbaa0f
+Author: ztxz16 <410644548@qq.com>
+Date:   Thu Jul 13 16:51:43 2023 +0800
+
+    Merge pull request #115 from kiranosora/master
+
+    fix compatibility issues for Android 11+
+
+commit 34dbd1d240806c8fc88858cb3e7f13ca5dcebabb
+Merge: 740f5fd 42c0efd
+Author: ztxz16 <410644548@qq.com>
+Date:   Thu Jul 13 16:51:29 2023 +0800
+
+    Merge pull request #116 from sonald/patch-1
+
+    fix: use modelpath
+
+commit 740f5fd13f946d1288753fa07b0bdd9dac2c9089
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 13 16:38:20 2023 +0800
+
+    支持baichuan-13b模型直接转换
+
+commit eae157d5d17dd217defae2794b726f2e473039cc
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 13 15:33:56 2023 +0800
+
+    fix
+
+commit d7f29b38ebccadf422d8f224d19887d7c9cc3e64
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 13 15:05:29 2023 +0800
+
+    优化一下cuda缓存，支持稍长一点的输入
+
+commit d008407d956081314eb0ffe769e9c865f19250ff
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 13 12:15:50 2023 +0800
+
+    修复长上下文显存爆炸的问题
+
+commit 42c0efdcf5690e737f491aa84bd7de4a6b0d182d
+Author: Sian Cao <yinshuiboy@gmail.com>
+Date:   Thu Jul 13 11:14:06 2023 +0800
+
+    fix: use modelpath
+
+commit 2dbaa0fd0dc0612b8ccbbaa281d95d50bcf2dbd5
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Wed Jul 12 21:29:08 2023 +0800
+
+    fix compatibility issues for Android 11+
+
+commit 2ed80646572004385979a3f0e43a573191dc0a1f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 19:59:53 2023 +0800
+
+    fix
+
+commit ee482df3869f1e6251d3e7c3498692893c00374b
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 19:48:09 2023 +0800
+
+    增加int4_nozero精度模式（int4且不带zeroPoint)
+
+commit 42576f9c7613025fa88da8d82e362be96e2f8195
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 14:39:57 2023 +0800
+
+    加上alibi的cuda实现
+
+commit 62dd03ea304603a8b3208ad5baf979ff8e7745fc
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 13:28:17 2023 +0800
+
+    支持alibi编码
+
+commit 9f2cf5f2563b459ec67a2c6e9ee6e298e4f9eb4c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 13:27:53 2023 +0800
+
+    修改百川的转换文件
+
+commit ae46cdf5d534572ac98aae28e99a4163f6b45f7e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 13:27:05 2023 +0800
+
+    2代baichuan使用特殊的token来做prompt
+
+commit 9cdc8c88c2d217d68b1f4ed85013973a4380cd35
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 12 01:28:44 2023 +0800
+
+    初步对齐Baichuan-13b推理部分，增加Alibi编码
+
+commit eaa277df3b72a7bd76c6debc1d8aec33dc45f414
+Merge: 38cb7f6 9cb2d91
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Jul 11 10:26:10 2023 +0800
+
+    Merge pull request #100 from kiranosora/master
+
+    fix py_api  && fix fastllm_pytools for windows
+
+commit 9cb2d91ebeb9a2f6d453e71c2ae9331e103fd825
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Tue Jul 11 02:30:15 2023 +0800
+
+    add batch web api for pyfastllm/demo/web_api.py
+
+commit 220137a693dc03c83b566f92913655121961c7ff
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Tue Jul 11 00:37:57 2023 +0800
+
+    fix py_api, add GenerationConfig && fix pyfastllm/build_libs.py
+
+commit f8a3758f380144da6174dc1635b8f2bb461c005f
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Mon Jul 10 23:57:22 2023 +0800
+
+    fix fastllm_pytools for windows
+
+commit e088536e216b950fb01c8f1a45a37d5e6d9e3ab2
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Mon Jul 10 23:46:06 2023 +0800
+
+    Revert "fix py_api, add GenerationConfig && fix pyfastllm/build_libs.py"
+
+    This reverts commit f315bea4c56b3463c3d0fd5f360411bec1bbe93d.
+
+commit f315bea4c56b3463c3d0fd5f360411bec1bbe93d
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Mon Jul 10 23:41:32 2023 +0800
+
+    fix py_api, add GenerationConfig && fix pyfastllm/build_libs.py
+
+commit 38cb7f62aadbdd6f2a45f8ad0762b474029292dc
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 10 20:40:30 2023 +0800
+
+    update readme
+
+commit ea7740c3755e5d0767a54e70adfadaf80d6897a4
+Merge: a7a98c1 6e47289
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Jul 10 15:21:51 2023 +0800
+
+    Merge pull request #89 from bjmsong/master
+
+    add avx2 for fp32
+
+commit 6e47289d17f5bda3611c762cca9bb232a04634b9
+Author: bjmsong <mdattack@126.com>
+Date:   Mon Jul 10 13:49:30 2023 +0800
+
+    add avx2 for gelu
+
+commit 6511046cad9364c6a3eede912d4d2bd10a637d8c
+Author: bjmsong <mdattack@126.com>
+Date:   Mon Jul 10 10:07:17 2023 +0800
+
+    add avx2 for LayerNorm
+
+commit a7a98c15c990dd869cf7ffcc838801f6c48a35d5
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 10 01:44:55 2023 +0800
+
+    增加打印指令集信息的函数，pytools里增加一些控制接口
+
+commit aa6915c525e2a8796f336e1423432b65b72225a8
+Author: bjmsong <mdattack@126.com>
+Date:   Sun Jul 9 17:15:13 2023 +0800
+
+    add avx2 for fp32
+
+commit 9fc7e0b083a7e16d882a06022a3da5514260d86e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jul 9 13:42:20 2023 +0800
+
+    默认cuda架构使用native
+
+commit f3fc04542136826c2190d5258bffb0f83cc9b76a
+Merge: 1b0e01e e6a1a21
+Author: ztxz16 <410644548@qq.com>
+Date:   Sat Jul 8 23:46:31 2023 +0800
+
+    Merge pull request #85 from wildkid1024/dev
+
+    修复一些bug&增加接口文档
+
+commit 1b0e01e0a00697bc236b5168f759dd03a8cac137
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Jul 8 23:39:57 2023 +0800
+
+    cpu fp16加速
+
+commit e6a1a213e3e81d1cda4f4f3b8dce02a9cc381ebd
+Merge: 129f60c 9950def
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Sat Jul 8 20:11:02 2023 +0800
+
+    Merge branch 'master' of github.com:wildkid1024/fastllm into dev
+
+commit 129f60cdbd5ce7ec0ff20eab5abc79bed8fbe0c5
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Sat Jul 8 20:00:58 2023 +0800
+
+    更新到版本v0.1.3
+
+commit 9950def35df1cba998b3cdd1b8fe089cee219257
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Jul 8 02:16:07 2023 +0800
+
+    默认weight version设置成2，解决一些模型导出后无法导入的问题
+
+commit 5564435d15687e2593137d9e3ced0cc0357dd3cf
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 21:13:40 2023 +0800
+
+    fix
+
+commit 328136f623a6d8b5c237254eae386cfd66f3bce3
+Merge: 3785b24 1407392
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Jul 7 21:05:25 2023 +0800
+
+    Merge pull request #82 from hubin858130/master
+
+    更新android代码适配最新模型
+
+commit 14073923780fbeb0f717e18d1b6140c63725abb7
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri Jul 7 19:20:58 2023 +0800
+
+    更新android代码适配最新模型
+
+commit 3785b24f60e58e3b95d170d37da3c4cb0da009b8
+Merge: 1a752ed 784bd57
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Jul 7 18:25:37 2023 +0800
+
+    Merge pull request #81 from bjmsong/master
+
+    unify multi-threading & delete unused code
+
+commit 1a752ed884d6f503c8a14a8b95b53b46cec58691
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 18:20:23 2023 +0800
+
+    main函数加上参数控制采样
+
+commit 61f343defe42dcb961a0f7d99fb7ae5c9ced8321
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 18:20:05 2023 +0800
+
+    暂时注释掉改了的function
+
+commit d2122cfbc3d8ea5f9bbf72f7f686cac4256ec48f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 18:07:31 2023 +0800
+
+    pytools接口支持采样参数
+
+commit 784bd5704e3e2915cfe2bd0856ccb0a5ba84dea5
+Author: bjmsong <mdattack@126.com>
+Date:   Fri Jul 7 16:21:20 2023 +0800
+
+    unify multi-threading & delete unused code
+
+commit 21b6586cf8436722f5610e1c3504574e854cf786
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 14:59:13 2023 +0800
+
+    fix
+
+commit a7057377cc2e7aae571670912ed76123b0cbb43d
+Merge: 584518f e46c897
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 14:29:54 2023 +0800
+
+    Merge branch 'master' of https://github.com/ztxz16/fastllm
+
+commit e46c897ac783d494e6d06741bfce7ede268cd317
+Merge: bb36a7c e740cc6
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Jul 7 14:28:15 2023 +0800
+
+    Merge pull request #74 from eltociear/patch-1
+
+    Fix typo in armMath.h
+
+commit 584518f0a679fc00cb44ae08d1c57a35b39e32de
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jul 7 14:27:49 2023 +0800
+
+    支持Sampling参数top_p, top_k, temperature, repeat_penalty
+
+commit e740cc63614c3af8db51f23004c300354028c635
+Author: Ikko Eltociear Ashimine <eltociear@gmail.com>
+Date:   Fri Jul 7 00:22:28 2023 +0900
+
+    Fix typo in armMath.h
+
+    substract -> subtract
+
+commit bc827cfb643811de342fbe8b334e8f179e782ad5
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jul 6 13:11:50 2023 +0800
+
+    update avx for int8
+
+commit bb36a7c22431bebb76c9c78904d97e5da86aeee0
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 5 19:55:18 2023 +0800
+
+    speed up for avx
+
+commit f3bec39d47f75dd25c99c7dfeaa0600d7559e9cf
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 5 14:37:57 2023 +0800
+
+    cpudevice使用线程池
+
+commit 473360b8e85590bffd360848d5e118d79b235b76
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jul 5 10:12:02 2023 +0800
+
+    update readme
+
+commit 519933c8fa8065091256bd33a5adb02508d94fde
+Merge: 6848068 d3319b1
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Wed Jul 5 00:55:39 2023 +0800
+
+    Merge branch 'master' of github.com:wildkid1024/fastllm into dev
+
+commit 6848068090c9e80581983d06aee0714ff757d7ef
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Wed Jul 5 00:53:44 2023 +0800
+
+    添加转化接口&fix python api
+
+commit d3319b191885bf470f3ff2206e48e5a781051213
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 19:00:20 2023 +0800
+
+    提高cpu linear的精度
+
+commit e66e330e4b68e1e019112d231b16fef908f26948
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 17:04:03 2023 +0800
+
+    fix comment
+
+commit 7960f8ddbd1cc8b5ce2f0044fab255903474cb98
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 15:30:03 2023 +0800
+
+    fix py_api
+
+commit 17c2c3eeb22498369fcf9a7d503ff9bbb5eac14e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 15:05:30 2023 +0800
+
+    speed up for glm2
+
+commit 4b1c39e9a733d9b9bce0ce87f319a32912d3c18c
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 13:58:34 2023 +0800
+
+    update
+
+commit 1e63edf87dcf85a35230a6244c880d811abef9b1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 13:51:22 2023 +0800
+
+    update readme
+
+commit 200d7a39a506907c6dbc1b62eb6a7a7103f65411
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 13:20:15 2023 +0800
+
+    增加保存模型接口
+
+commit 9405067e24a8b887ee9ceec4e158209aeab1b0ed
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jul 4 00:39:09 2023 +0800
+
+    适配chatglm2的接口
+
+commit 5de860d4ed22c395ee3d0c32af8949ac6dfda700
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 3 23:00:18 2023 +0800
+
+    转完模型之后先初始化、预热
+
+commit 59f2be0107a30819962f293087f9d663602424e3
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 3 20:06:06 2023 +0800
+
+    修复cuda计算错误
+
+commit 0634e768ea6fe6e108582d1f505426c8fc553613
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 3 16:33:00 2023 +0800
+
+    增加从hf_model直接创建fastllm model的接口 （测试中）
+
+commit 4a5c2d7c8dbe5171dc3be069966f78157f1b47f9
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jul 3 16:31:43 2023 +0800
+
+    fix chatglm2
+
+commit a373efa4d387d565d8097a7ebd1f570fa8b82102
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jul 2 00:16:57 2023 +0800
+
+    fix
+
+commit c3ee2057065c9d98d65935f3777ba7778b15d352
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jul 2 00:01:02 2023 +0800
+
+    初步兼容chatglm2
+
+commit c0dfc84c307a04d9b289ee7401c5de1121e0a899
+Author: huangyuyang <410644548@qq.com>
+Date:   Sat Jul 1 00:09:32 2023 +0800
+
+    fix cmake for windows
+
+commit 7e17027af1add03ac055d4923a298bbddae50755
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 30 02:51:25 2023 +0800
+
+    update readme
+
+commit b1f938227a61589759c89a7e131c7e62c5d99f02
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 30 02:26:15 2023 +0800
+
+    更新文档
+
+commit dec605ad285bd7088b61bc2adac46312fa4779c4
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jun 29 18:51:23 2023 +0800
+
+    整理一下转模型相关脚本，提供一个pytools做一些简单api调用
+
+commit 9500c7d797213a780b6512fb06f84f018e2ef5cd
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jun 29 18:47:00 2023 +0800
+
+    webui修改标题
+
+commit 7d9dcfeb068de7bfe616d35ae71d0d55f1ee67c3
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jun 29 18:46:23 2023 +0800
+
+    decode增加一个接口
+
+commit fd35d952d7ce19d721096ab48760401fdbf58ec6
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 28 21:34:31 2023 +0800
+
+    add fflush
+
+commit 96a30fb47237af0becbb398a0f23e1de45ea7979
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed Jun 28 15:32:47 2023 +0800
+
+    fix
+
+commit c8b8eaa6aeee6e4ebe8305a683170ddf23624560
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 28 14:13:11 2023 +0800
+
+    改一下目录结构
+
+commit e33e3dc03a48fb06394af0a9eb76c770e9b78317
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed Jun 28 14:04:59 2023 +0800
+
+    fix windows
+
+commit b2c18f8625a130f6dd245dd33cc6497958582f31
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 28 13:55:48 2023 +0800
+
+    修改一下fetch命令，改成每次fetch一个token
+
+commit 98c8d8754616109050a120d18279d42ecf455346
+Merge: 36abaa2 9563e1c
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Jun 28 01:59:55 2023 +0800
+
+    Merge pull request #50 from kiranosora/master
+
+    添加python版web api示例
+
+commit 9563e1cd38feb4ce4fe435bc44093370749ce7e3
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Tue Jun 27 21:11:01 2023 +0800
+
+    添加python版web api示例
+
+commit cb48d4b4bd3997d7b877ce37dae6b1156054dd1f
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Tue Jun 27 21:03:51 2023 +0800
+
+    添加python版web api示例
+
+commit 36abaa207d45a5301ddc623405ab2d57e1b1d3a1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 27 11:06:12 2023 +0800
+
+    fix decode
+
+commit b90741a0ff75a1950ca231841988087752791eed
+Merge: 750ed2d c1fbe86
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Jun 27 10:40:55 2023 +0800
+
+    Merge pull request #46 from wildkid1024/dev
+
+    新增部分py low level接口
+
+commit c1fbe86fe0f7495c9bd3d0cc99d19f8d2eb08a8e
+Merge: b703414 750ed2d
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Jun 27 10:40:31 2023 +0800
+
+    Merge branch 'master' into dev
+
+commit 750ed2d303a0846afb33a5fb75a67ce7920db73a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 27 10:30:08 2023 +0800
+
+    webui支持llama系列模型
+
+commit b703414424b0766e2c4e9ac325b24b2247ce13b2
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Tue Jun 27 01:25:15 2023 +0800
+
+    支持多线程&部分low level API接口
+
+commit f94ecdbd66b087f753add3dcc5f48a8672564019
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Tue Jun 27 00:08:53 2023 +0800
+
+    merge branch from remote
+
+commit 56ced61a96a5b01d9eefaf333210b998f19c3050
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Mon Jun 26 23:56:53 2023 +0800
+
+    low level api & 优化convert
+
+commit b83425815ff37c86f375b60dee512bff3af2c89f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jun 26 23:22:14 2023 +0800
+
+    webui适应性修改
+
+commit c54101a5a04081f3b9897f5d494db6b4a6cdcb11
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jun 26 23:20:08 2023 +0800
+
+    增加动态batch接口
+
+commit bd3ff02eeaea50f0d68ee7a7fec4e315b5dd0eb2
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jun 25 19:09:54 2023 +0800
+
+    webui多线程支持
+
+commit 8e8561dea0f8d9a4cf8cbcd1d469dc40275b8d22
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jun 25 16:10:55 2023 +0800
+
+    增加流式输出token的接口
+
+commit e95e4ddb4d721b1c72c6a8235723a0d08c65a390
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat Jun 24 10:59:13 2023 +0800
+
+    fix chatglm batch
+
+commit 7481c105348b4fe045bb7a54d534aebc0ffc5ed3
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 23 17:03:27 2023 +0800
+
+    llama模型batch功能除penalty之外对齐
+
+commit 29f5909d8d7d4a67c32d94a31196a699c3f2d789
+Merge: 81d6577 fa0c03a
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Jun 21 23:47:46 2023 +0800
+
+    Merge pull request #43 from kiranosora/master
+
+    修复py api中将非unicode字符传给callback导致的退出问题
+
+commit fa0c03aa857f46d9bc968b856a82919d4b6c9841
+Author: kiranosora <kiranosora@gmail.com>
+Date:   Wed Jun 21 21:45:51 2023 +0800
+
+    修复py api中将非unicode字符传给callback导致的退出问题
+
+commit 81d6577c25575317862471b7e53c2f56c7f0c819
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 21 16:31:56 2023 +0800
+
+    一些模型合并，优化一些算子
+
+commit aee130c56aa02045b3bb1cb2fcdfff78bd865364
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 21 11:21:40 2023 +0800
+
+    fix speed
+
+commit cd37cc126daba7a1ec9a3d3fb55f69b45e06c576
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 21 11:01:05 2023 +0800
+
+    fix
+
+commit 6c54be47cb8308ced16fc504fea7d5b2bb46bb45
+Merge: 52ecb01 35d3719
+Author: ztxz16 <410644548@qq.com>
+Date:   Wed Jun 21 10:37:12 2023 +0800
+
+    Merge pull request #37 from wildkid1024/dev
+
+    同步更新新版本的py api&fix一些bugs
+
+commit 35d3719d216819d904e9e89d7f402d343b56ec2b
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Wed Jun 21 02:50:05 2023 +0800
+
+    同步更新新版本的py api&fix一些bugs
+
+commit 82f12eb5ee01e788fad1bbd22e54ec92da445e8d
+Merge: b2bc3cd 52ecb01
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Wed Jun 21 01:20:59 2023 +0800
+
+    Merge branch 'master' of github.com:wildkid1024/fastllm into dev
+
+commit b2bc3cd3ce0bfa3cd141142c9d03d3bebe4534df
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Wed Jun 21 01:17:33 2023 +0800
+
+    添加python方式打包
+
+commit 52ecb014a0d3684f31edf50d091743b78e0a2b00
+Merge: db8adde c145169
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue Jun 20 19:47:27 2023 +0800
+
+    Merge pull request #36 from tiansztiansz/patch-1
+
+    Update README.md
+
+commit db8adde4d686d39f7e17393c89acdbdb1a0ed84e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 20 19:44:19 2023 +0800
+
+    整理文件结构，模型统一化（使用统一接口读入），模型转换工具简单化
+
+commit c14516983ba4de32beaef8d6b68cffd0b0626f02
+Author: tiansztiansz <18664140675@163.com>
+Date:   Mon Jun 19 23:27:09 2023 +0800
+
+    Update README.md
+
+    在`python-binding`运行中`mddir`改为`mkdir`
+
+commit 0256a5fe93d7f79bef8085165493eeedd53e411a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jun 19 10:41:45 2023 +0800
+
+    some fix
+
+commit 4e4c39ccae078734dd5d7b20867975debc620ad2
+Merge: 1f4d1d4 5880519
+Author: ztxz16 <410644548@qq.com>
+Date:   Mon Jun 19 10:20:09 2023 +0800
+
+    Merge pull request #33 from wildkid1024/dev
+
+    添加pybind的high-level接口
+
+commit 5880519065d0ea2d7490073e4127c93f6c71678e
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Mon Jun 19 02:32:29 2023 +0800
+
+    修改readme中pybind的编译说明
+
+commit 16ce24cc9b647bd7b6f3b53d8760e1d2d443f2c3
+Merge: 854776a 34ade03
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Mon Jun 19 02:27:19 2023 +0800
+
+    Merge branch 'master' of github.com:wildkid1024/fastllm into dev
+
+commit 854776a2f78ae4f6b6e96a7c4d8f578f43e972fc
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Mon Jun 19 02:27:09 2023 +0800
+
+     调整以适应fastllm新的提交
+
+commit 34ade036b402c88a6502e176b9f45744819c29af
+Merge: 20c36bd 1f4d1d4
+Author: Shubo Liu <40530961+wildkid1024@users.noreply.github.com>
+Date:   Sun Jun 18 01:09:52 2023 +0800
+
+    Merge branch 'ztxz16:master' into master
+
+commit 1f4d1d424500d1f7037b3663b5d0533614c4e90f
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 16:04:30 2023 +0800
+
+    update readme
+
+commit 536318d759dcbcd38a51d9d5decf4aa76a881dd8
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 15:39:40 2023 +0800
+
+    更新提示
+
+commit 94ffcb2b2b491330de679417194d23b6da4dcb45
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 15:37:03 2023 +0800
+
+    增加百川对话模型支持
+
+commit 8c92f90fbc7d60d226e35cb6e18375f211e8f915
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 11:38:02 2023 +0800
+
+    fix
+
+commit 372042cf3dc899c1a610286841b90ed4340bca5b
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 10:16:08 2023 +0800
+
+    补提交
+
+commit eed2a72b90a47c2286056bf53b832aa03270f4f2
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 01:42:32 2023 +0800
+
+    增加控制kvCache是否锁定在CPU上的函数
+
+commit 38494242ea05182d870b5b6116a014b1327c90b3
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 16 01:18:07 2023 +0800
+
+    初步实现baichuan模型（输入输出已对齐，前处理（分词）和后处理还有点问题）
+
+commit 5f9d3f7719f198cf344383ea9f849d77cb9fe26b
+Merge: 6062c47 20c36bd
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Thu Jun 15 02:09:10 2023 +0800
+
+    Merge remote-tracking branch 'dev/master' into dev
+
+commit 6062c47f637983d2e38baeade5cf2acee78e0f70
+Author: wildkid1024 <wildkid1024@163.com>
+Date:   Thu Jun 15 02:01:00 2023 +0800
+
+    增加pybind11支持python接口
+
+commit 20c36bd26b268369efd2f159e7f6b9fe59adf793
+Merge: e356a23 4d99a41
+Author: Shubo Liu <40530961+wildkid1024@users.noreply.github.com>
+Date:   Thu Jun 15 01:40:27 2023 +0800
+
+    Merge branch 'ztxz16:master' into master
+
+commit 4d99a416016bb55967e87d42172f01080c33e109
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 14 20:14:10 2023 +0800
+
+    speedup
+
+commit 376914b8374c0fc7e3b2cb85c55b2affc181ab14
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed Jun 14 19:59:17 2023 +0800
+
+    初步重构代码，抽离Device层，不同设备使用不同的Device
+
+commit 793bdb52fd3833c76bb7fb0c469a2fea17487f84
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 13 15:39:39 2023 +0800
+
+    cuda int4 speedup
+
+commit 9f11143894f28ba8ce26a47db312cfce58d01d70
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 13 15:39:27 2023 +0800
+
+    cpu matmul speed up
+
+commit d07a8a48ea8e56dc233d1f1f4e4e00abf9ad1329
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 13 15:38:53 2023 +0800
+
+    统一Forward函数
+
+commit db0d41a60c7f3531eb8c72ca1e7a92b5874a1aa1
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon Jun 12 18:12:15 2023 +0800
+
+    benchmark相关的一些修改
+    1、benchmark增加-l参数限制输出长度
+    2、增加MatMul算子
+    3、大缓存增加手动清理函数
+    4、使用一个简单的prompt做benchmark测试
+
+commit b3123979fe18be3f8b65e452cbb2300d6fa28f53
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jun 11 23:39:05 2023 +0800
+
+    modify cmake
+
+commit 9e3889c3ad23a5242b1c9dcb143382adc74c5930
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 9 16:53:42 2023 +0800
+
+    增加一个benchmark程序
+
+commit 43315aa9546e5a3a9785bc254ea85c53701ae68b
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 9 15:46:41 2023 +0800
+
+    修复、改善 batch forward的一些地方
+    1、Rotate, AttentionMask改成batch版
+    2、抽离topK算子
+    3、修复，调优batch运算
+
+commit 0d1bfce8a95a65a7161ad85dab7879c117535c14
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jun 8 00:18:43 2023 +0800
+
+    初步实现batch forward
+
+commit ba4c7fab606f9e4e30fdf2f5f087924960407017
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu Jun 8 00:16:34 2023 +0800
+
+    加一个PrintShape功能
+
+commit e356a23379007751f921760d2eff252c8a4c3fae
+Merge: 5401b74 aba9f86
+Author: Shubo Liu <40530961+wildkid1024@users.noreply.github.com>
+Date:   Tue Jun 6 22:24:03 2023 +0800
+
+    Merge branch 'ztxz16:master' into master
+
+commit aba9f86d2fe96c8377a503720e3c235807db5a7e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 6 19:45:59 2023 +0800
+
+    一些优化
+
+commit 5b9a9ce91f223bb35c9169bc8f92a95ba6f40493
+Author: yuyang huang <410644548@qq.com>
+Date:   Tue Jun 6 01:10:37 2023 +0800
+
+    更新readme
+
+commit b04158e412aeb9a8767c3be795da6720abbb650e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Tue Jun 6 00:51:49 2023 +0800
+
+    优化cuda的fp16, int8, int4 kernel
+
+commit 5401b746b2d8e53a85cfab3e68fe2f0e3056583f
+Merge: ed6bc3e 01516be
+Author: Shubo Liu <40530961+wildkid1024@users.noreply.github.com>
+Date:   Mon Jun 5 09:42:52 2023 +0800
+
+    Merge pull request #1 from ztxz16/master
+
+    fp16版本的初步实现
+
+commit 01516be1f2fc0d84df04b82e5df9869970142df0
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sun Jun 4 00:16:58 2023 +0800
+
+    fp16版本的初步实现
+
+commit ed6bc3ea2b7569f67cb62041935ef9a429f20309
+Merge: eaaf9d5 31209a7
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri Jun 2 23:31:03 2023 +0800
+
+    Merge pull request #21 from hubin858130/master
+
+    更新android的demo，支持界面滚动和选择模型
+
+commit eaaf9d5cf3f0dd66877d5d629d01fed19fb80f29
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri Jun 2 23:04:21 2023 +0800
+
+    增加Vicuna支持 （还有点bug）
+
+commit 31209a7dc07d5281bf92639c7134a556af466f25
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri Jun 2 11:08:35 2023 +0800
+
+    更新android的demo，支持界面滚动和选择模型
+
+commit 4968e8c4a1c94ef40b1c82b6eb78437e065af415
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed May 31 19:38:27 2023 +0800
+
+    fix
+
+commit 591e9115a1c634fc8a480be7a974d19a8bacc038
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Wed May 31 19:29:26 2023 +0800
+
+    增加一些cuda算子，优化layernorm实现，增加一个不是特别优化的gemm实现
+
+commit bc92323288a15cbcea32aca376aefd3904d909de
+Author: huangyuyang <410644548@qq.com>
+Date:   Tue May 30 00:46:29 2023 +0800
+
+    add benchmark table
+
+commit e4d7b7b89562a4a587b751cb63c29cc666e7cf46
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 29 18:57:52 2023 +0800
+
+    优化cuda
+
+commit 645d61d60fda7f5201492d4d655286503ab57e9e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 29 18:54:55 2023 +0800
+
+    webui自动滚动
+
+commit 742ab8c9eee8ecc02523d39eab681c1d4ad71376
+Author: BeanDAO <hubin858130@163.com>
+Date:   Mon May 29 11:00:27 2023 +0800
+
+    修复部分Mac电脑上make失败的问题
+
+commit ab23b9267a186e370b6697daa652a97d20c505ea
+Merge: 7f85040 6530101
+Author: ztxz16 <410644548@qq.com>
+Date:   Sat May 27 19:24:20 2023 +0800
+
+    Merge pull request #14 from hubin858130/master
+
+    添加Fastllm的Android示例工程
+
+commit 65301013d965619fa7ca6de467783856da50ecd2
+Author: BeanDao <hubin858130@163.com>
+Date:   Sat May 27 13:59:34 2023 +0800
+
+    添加Fastllm的Android示例工程
+
+commit 7f850404d183c066393da32747e5aa1ffb04d925
+Merge: 1a6da9e 4915ef0
+Author: ztxz16 <410644548@qq.com>
+Date:   Sat May 27 12:07:19 2023 +0800
+
+    Merge pull request #13 from jacques-chen/master
+
+    Update webui.cpp
+
+commit 4915ef0233feca4e4646b8ff6c0446be42dad0a4
+Author: Jacques CHEN <jacques.chen@qq.com>
+Date:   Sat May 27 11:45:32 2023 +0800
+
+    Update webui.cpp
+
+commit 1a6da9eac36d5e74f05dd86276c4624ae76514f8
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Sat May 27 00:03:12 2023 +0800
+
+    修复int4计算错误
+
+commit 0d70c7e4e032373ee684653d509345169bbf9184
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri May 26 23:56:02 2023 +0800
+
+    增加DataDevice，控制数据块所在位置，减少内存拷贝
+
+commit 6b2678ee92dbb1aa1a8dac516bb34f809265e406
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Fri May 26 23:51:20 2023 +0800
+
+    增加一些cuda函数
+
+commit c6e28839c63195b27c2793bb7ea86cb5f7d26e3f
+Merge: e632b9d c67ce6d
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri May 26 23:42:32 2023 +0800
+
+    Merge pull request #12 from hubin858130/master
+
+    win32Demo添加了Jacques CHEN 提供的WebUI模块，修正原webui中回答不正确的问题。
+
+commit c67ce6dfc94be52ac2c2c68852af9864158c7ac8
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri May 26 16:37:17 2023 +0800
+
+    保留cmake版的webui
+
+commit 1f383a3d960645646230a0b82bde0fd84d8d2ea2
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri May 26 16:28:31 2023 +0800
+
+    del webui
+
+commit 695a827af395881aa3676696b9c18151384f5c8e
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri May 26 16:27:09 2023 +0800
+
+    win32demo添加了Jacques CHEN 提供的WebUI模块
+
+commit e632b9d644a7ef4ab347546df4703e7c59b1daaf
+Merge: b3228b3 f5f85c0
+Author: ztxz16 <410644548@qq.com>
+Date:   Fri May 26 10:42:50 2023 +0800
+
+    Merge pull request #11 from hubin858130/master
+
+    调整了代码结构，为异步接收算法返回值添加了回调，添加了Virtual Studio控制台程序示例，添加了其它平台的目录
+
+commit f5f85c0aa1a3b93f425784698bae2727ea0df805
+Author: BeanDAO <hubin858130@163.com>
+Date:   Fri May 26 09:59:10 2023 +0800
+
+    调整了代码结构，为异步接收算法返回值添加了回调，添加了win32控制台程序示例，添加了其它平台的目录
+
+commit b3228b3bce18c890560b837c83afce5dd54802e9
+Author: huangyuyang <410644548@qq.com>
+Date:   Fri May 26 01:28:22 2023 +0800
+
+    fix
+
+commit c84b86bf6d4a468f461392c6002357415e0df7b4
+Author: yuyang huang <410644548@qq.com>
+Date:   Fri May 26 01:16:55 2023 +0800
+
+    增加简易的低内存模式
+
+commit cfe70957be85bff62d7903974674f696abd21a4e
+Author: yuyang huang <410644548@qq.com>
+Date:   Fri May 26 00:00:33 2023 +0800
+
+    增加warmup
+
+commit 477b97e938c96de4d3850367778164233bfce0c2
+Author: yuyang huang <410644548@qq.com>
+Date:   Thu May 25 23:52:53 2023 +0800
+
+    初步实现int4的cuda版本
+
+commit 022124c8a8e313f7ef1a3a76c3ab06c49eb33636
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu May 25 23:25:12 2023 +0800
+
+    部分重构int8部分cuda代码
+
+commit 2c858ce6b6fa72b9e9e4cb0b3445a452208110ce
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu May 25 01:16:42 2023 +0800
+
+    更新README for webui
+
+commit 675478acdb6a83656f209591d070c6678f26a832
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu May 25 01:16:18 2023 +0800
+
+    更新webui
+
+commit a3133f42893fef948e0a64d0269dc79a4d93f96e
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu May 25 00:06:19 2023 +0800
+
+    int4计算优化
+
+commit 82898244de131a086239233833f0301ce196f850
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Thu May 25 00:03:03 2023 +0800
+
+    更新一些ARM优化
+    1、LayerNorm层优化
+    2、增加armv8.2a中的dotprod命令
+
+commit bc124a5cb1431fc3cb35ba7920b76c418d09e425
+Author: yuyang huang <410644548@qq.com>
+Date:   Mon May 22 22:58:32 2023 +0800
+
+    增加QQ群
+
+commit c8834df203b253ffd9bced8c65e3112d7ba73e3a
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 22 22:34:09 2023 +0800
+
+    更新README，增加CUDA编译说明，更新网盘（新加chatglm-6b-v1.1版本模型）
+
+commit 2a53087ae25adb7b4aeab6731f7fa3797e5fefdb
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 22 22:28:06 2023 +0800
+
+    增加预扩容尺寸，优化计算流程
+
+commit c4ed9fe72cd1f981dfdd72860bb17cf91057d4c5
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 22 22:25:42 2023 +0800
+
+    cuda部分修改
+
+commit 4d51d14e102189e3e84233993a35b6e29aea67a8
+Author: huangyuyang <huang.yuyang@think-force.com>
+Date:   Mon May 22 22:24:22 2023 +0800
+
+    gelu计算做一些优化
+
+commit c3d276599c07af96d9ae6f475fbb8537f6ec986a
+Author: yuyang huang <410644548@qq.com>
+Date:   Sun May 21 21:36:38 2023 +0800
+
+    初步支持cuda
+
+commit 4eb003dbadc6c789a578b14ddb69285a104c3958
+Author: yuyang huang <410644548@qq.com>
+Date:   Sun May 21 21:34:33 2023 +0800
+
+    替换ChatGLM里的一些特殊字符
+
+commit 80125cfcc5e4be77529a7fc9a1fb739f113f05c6
+Author: yuyang huang <410644548@qq.com>
+Date:   Sun May 21 21:31:49 2023 +0800
+
+    修改getopt部分，使得系统通用性更强
+
+commit fa5542dd4ed630dc8be2893e2e65e3f6330cd4dd
+Author: huangyuyang <410644548@qq.com>
+Date:   Thu May 18 22:44:57 2023 +0800
+
+    fix
+
+commit 153598b446d906e474acca71bd76f0696a1167a3
+Author: yuyang huang <410644548@qq.com>
+Date:   Thu May 18 08:57:38 2023 +0800
+
+    int4第一次答复avx加速
+
+commit 1737194d38454841b147fb4283fcea86e725b8d8
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed May 17 23:57:25 2023 +0800
+
+    fix compile
+
+commit 9444540020e1b999e94901e3c35f1e1585827f16
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed May 17 23:35:58 2023 +0800
+
+    加速permute
+
+commit c03fb79f2e3f95ad9610882a18ec2724d2232f7d
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed May 17 23:35:45 2023 +0800
+
+    修复输入过长时出错的问题
+
+commit e5e00c7d0aec868641a502f0e02790244797aab3
+Author: huangyuyang <410644548@qq.com>
+Date:   Wed May 17 23:22:16 2023 +0800
+
+    增加一些AVX优化
+
+commit d46fa157c29fb751673012ddffb8e0f90ebf21df
+Merge: e57b028 6fd7a0b
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue May 16 12:22:54 2023 +0800
+
+    Merge pull request #6 from wangzhaode/feature/add_reset
+
+    support reset history.
+
+commit 6fd7a0b1319495cb7e5df239b1f66e93689210d7
+Author: zhaode.wzd <zhaode.wzd@alibaba-inc.com>
+Date:   Tue May 16 12:18:38 2023 +0800
+
+    support reset history.
+
+commit e57b02827b655f521b142a84f5d0ef4aea94ac64
+Merge: 52d9d02 3a52e26
+Author: ztxz16 <410644548@qq.com>
+Date:   Tue May 16 12:12:21 2023 +0800
+
+    Merge pull request #5 from wangzhaode/feature/add_history
+
+    feat: add history.
+
+commit 3a52e26f68ef555137c567e7eb6dc58e410dd362
+Author: zhaode.wzd <zhaode.wzd@alibaba-inc.com>
+Date:   Tue May 16 12:09:58 2023 +0800
+
+    feat: add history.
+
+commit 52d9d027e0d8cc574d84fd22a63a946843848a28
+Author: huangyuyang <410644548@qq.com>
+Date:   Sat May 13 20:37:25 2023 +0800
+
+    更新README
+
+commit ff92ea51181b4a542cfb1102ad045f489b30e654
+Author: huangyuyang <410644548@qq.com>
+Date:   Sat May 13 17:41:26 2023 +0800
+
+    修复多线程bug
+
+commit aef3828a3e9c4f9f55faff7faf4c9c263cd53c3b
+Author: ztxz16 <410644548@qq.com>
+Date:   Sat May 13 16:47:06 2023 +0800
+
+    Create README.md
+
+commit 3609ea95bd66a3f56f0ebaeff1d0b7de0af24af7
+Author: huangyuyang <410644548@qq.com>
+Date:   Sat May 13 16:26:51 2023 +0800
+
+    添加导出工具、量化工具
+
+commit 90bdbb6d95cb274f89a8ac9623bf302f480df834
+Author: huangyuyang <410644548@qq.com>
+Date:   Fri May 12 20:46:04 2023 -0700
+
+    一些优化
+    1、matmul改成多线程
+    2、优化paskKeyValue系列操作
+
+commit 3b0ae90ed897c82cbb4779962502488415549acb
+Author: huangyuyang <410644548@qq.com>
+Date:   Fri May 12 04:17:47 2023 -0700
+
+    add gitignore
+
+commit 2dc947c9c493d16571d138ebf7bb0feb29f989c1
+Author: huangyuyang <410644548@qq.com>
+Date:   Fri May 12 04:16:19 2023 -0700
+
+    Init

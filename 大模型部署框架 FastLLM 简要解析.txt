@@ -1,0 +1,252 @@
+大模型部署框架 FastLLM 简要解析
+发布于 2023-08-22 08:49:04
+
+0x0. 前言
+本文主要是对FastLLM做了一个简要介绍，展示了一下FastLLM的部署效果。
+然后以chatglm-6b为例，对FastLLM模型导出的流程进行了解析，接着解析了chatglm-6b模型部分的核心实现。最后还对FastLLM涉及到的优化技巧进行了简单的介绍。
+
+0x1. 效果展示
+按照 https://github.com/ztxz16/fastllm 中 README教程 编译fastllm之后，
+再按照教程导出一个 chatglm6b 模型参数文件（按照教程默认叫chatglm-6b-fp16.flm）。
+然后在编译时创建的 build 目录中执行./webui -p chatglm-6b-fp16.flm --port 1234 即可启动一个由FastLLM驱动的webui程序，
+效果如下：
+01.png
+
+除了c++调用以外，FastLLM也基于PyBind导出了Python接口，支持简易python调用。
+并且FastLLM不仅支持Windows/Linux，还支持通过NDK将其编译到Android手机上进行使用。
+
+另外在对话时，FastLLM支持了流式对话的效果，体验更好。
+并且FastLLM对批量推理进行了支持，也就是说如果有多个用户的请求进来，不管是否它们请求的长度是否相同都可以在FastLLM中组成一个batch来批量推理节约资源。
+
+0x2. FastLLM chatglm-6b模型导出解析
+......
+
+
+....
+
+
+以ChatGLM为例，在模型导出时执行的命令如下：
+
+# 需要先安装ChatGLM-6B环境
+# 如果使用自己finetune的模型需要修改chatglm_export.py文件中创建tokenizer, model的代码
+# 如果使用量化模型，需要先编译好quant文件，这里假设已经存在build/quant文件
+cd build
+python3 tools/chatglm_export.py chatglm-6b-fp32.flm # 导出浮点模型
+./quant -p chatglm-6b-fp32.flm -o chatglm-6b-fp16.flm -b 16 #导出float16模型
+./quant -p chatglm-6b-fp32.flm -o chatglm-6b-int8.flm -b 8 #导出int8模型
+./quant -p chatglm-6b-fp32.flm -o chatglm-6b-int4.flm -b 4 #导出int4模型
+
+
+所以我们接着解读一下chatglm_export.py。
+....
+这里的torch2flm.tofile就是我们上面解析的函数。
+
+....
+
+0x3. FastLLM chatglm-6b模型支持流程解析
+在FastLLM中要支持一个新的模型需要在fastllm/include/models这个目录下进行扩展，我们这里以chatgm6b为例简单解析一下流程。
+首先我们在fastllm/include/models下定义一个chatglm.h头文件：
+
+
+...
+
+ChatGLMModel::Response 函数解析
+std::string ChatGLMModel::Response(const std::string& input, RuntimeResult retCb,
+                                       const GenerationConfig &generationConfig) {
+        // 在模型的权重字典中查找“gmask_token_id”，如果找到了就将其值转化为整数，
+        // 如果没找到就将其设为130001。
+        int gmask_token_id = this->weight.dicts.find("gmask_token_id") != this->weight.dicts.end() ?
+                             atoi(this->weight.dicts["gmask_token_id"].c_str()) : 130001;
+#ifdef USE_CUDA
+        // 清理 CUDA 的大缓冲区。
+        FastllmCudaClearBigBuffer();
+#endif
+        // 对输入的字符串进行编码，得到一个表示输入的整数数组 inputIds。
+        Data inputIds = this->weight.tokenizer.Encode(input);
+        std::vector <float> ids;
+        // 将 inputIds 的值复制到 ids 中。
+        for (int i = 0; i < inputIds.Count(0); i++) {
+            ids.push_back(((float*)inputIds.cpuData)[i]);
+        }
+        // 根据版本号，在 ids 的末尾或开头插入特定的整数值。
+        if (GetVersion() == 1) {
+            ids.push_back(gmask_token_id);
+            ids.push_back(bos_token_id);
+        } else if (GetVersion() == 2) {
+            ids.insert(ids.begin(), 64792);
+            ids.insert(ids.begin(), 64790);
+        }
+
+        int seqLen = ids.size();
+        // 根据 ids 创建一个新的 Data 对象，并将其复制给 inputIds。
+        inputIds.CopyFrom(Data(DataType::FLOAT32, {1, seqLen}, ids));
+
+        std::vector <float> vmask = std::vector <float> (seqLen * seqLen, 0);
+        std::vector <float> vpids = std::vector <float> (seqLen * 2, 0);
+        for (int i = 0; i < seqLen - 1; i++) {
+            vmask[i * seqLen + seqLen - 1] = 1;
+            vpids[i] = i;
+        }
+        // 为 vmask 和 vpids 初始化值。
+        vpids[seqLen - 1] = seqLen - 2;
+        vpids[seqLen * 2 - 1] = 1;
+
+        // 如果版本号为 2，那么重新为 vmask 和 vpids 分配值。
+        if (GetVersion() == 2) {
+            for (int i = 0; i < seqLen; i++) {
+                vpids[i] = i;
+                for (int j = i + 1; j < seqLen; j++) {
+                    vmask[i * seqLen + j] = 1;
+                }
+            }
+        }
+        // 根据 vmask 和 vpids 创建 attentionMask 和 positionIds。
+        Data attentionMask = Data(DataType::FLOAT32, {seqLen, seqLen}, vmask);
+        Data positionIds = Data(DataType::FLOAT32, {2, seqLen}, vpids);
+
+        // 创建一个包含 block_cnt 个空 Data 对象的向量 pastKeyValues。
+        std::vector <std::pair <Data, Data> > pastKeyValues;
+        for (int i = 0; i < block_cnt; i++) {
+            pastKeyValues.push_back(std::make_pair(Data(DataType::FLOAT32),
+                                                   Data(DataType::FLOAT32)));
+        }
+
+        // 定义一个空的字符串 retString，它将用于存储生成的文本。
+        std::string retString = "";
+        // len 代表生成的文本长度，初始化为 1。
+        // maskIds 用于在某些情况下标记生成的文本，初始化为 -1。
+        int len = 1, maskIds = -1;
+        // 定义一个浮点数向量 results，它将用于存储生成的单词或字符的编码。
+        std::vector <float> results;
+    // 定义一个整数变量 index，并初始化为 0。
+    // 这个变量可能用于追踪生成过程中的步骤数或其他类似的目的。
+    int index = 0;
+    // 创建一个 LastTokensManager 类型的对象 tokens。该对象用于管理生成过程中的最后一个token。
+        LastTokensManager tokens (1, generationConfig.last_n);
+        // 这个循环用于生成文本，直到满足某个退出条件。
+        while (true) {
+            // 记录当前时间，可能用于后续计算生成文本所需的时间。
+            auto st = std::chrono::system_clock::now();
+            // 调用 Forward 函数生成下一个令牌，并将生成的token存储在 ret 中。
+            int ret = Forward(inputIds, attentionMask, positionIds, pastKeyValues, generationConfig, tokens);
+            // 将生成的token ret 添加到 tokens 对象的第一个单元中。
+            tokens.units[0].Push(ret);
+            // 如果生成的token ret 是结束token（eos_token_id），则跳出循环。
+            if (ret == eos_token_id) {
+                break;
+            }
+
+            // 将生成的token ret 添加到 results 向量中。
+            results.push_back(ret);
+            // 将 results 向量中的token解码为字符串 curString。
+            std::string curString = weight.tokenizer.Decode(Data(DataType::FLOAT32, {(int)results.size()}, results)).c_str();
+            // 将解码得到的字符串 curString 添加到 retString 中。
+            retString += curString;
+   if (retCb)
+#ifdef PY_API
+    retCb(index, pybind11::bytes(retString));
+#else
+    retCb(index, curString.c_str());
+#endif
+            // 增加生成进度 index。
+            index++;
+            // 刷新标准输出流，将所有未写入的数据写入。
+            fflush(stdout);
+            // 清空 results 向量，为生成下一个token做准备。
+            results.clear();
+
+            len++; // 增加生成的文本长度 len。
+            if (maskIds == -1) {
+                // 如果 maskIds 为 -1，说明这是第一次生成token，因此设置 maskIds 的值。
+                maskIds = (int)ids.size() - (GetVersion() == 1 ? 2 : 0);
+            }
+
+            // 将 attentionMask 和 positionIds 移动到 CPU 设备上。
+            attentionMask.ToDevice(DataDevice::CPU);
+            positionIds.ToDevice(DataDevice::CPU);
+            // 更新 inputIds 为最新生成的token ret。
+            inputIds.CopyFrom(Data(DataType::FLOAT32, {1, 1}, {(float)ret}));
+            // 更新 attentionMask 和 positionIds。
+            attentionMask = Data();
+            positionIds.CopyFrom(Data(DataType::FLOAT32, {2, 1}, {(float)maskIds, (float)(len)}));
+            // 如果使用的模型版本是 2，增加 maskIds。
+            if (GetVersion() == 2) {
+                maskIds++;
+            }
+            // 如果生成的令牌数量 index 已经达到了设定的输出token限制，break
+            if (index == generationConfig.output_token_limit) {
+                break;
+            }
+             // printf("len = %d, spend %f s.\n", len, GetSpan(st, std::chrono::system_clock::now()));
+        }
+  if (retCb)
+#ifdef PY_API
+   retCb(-1, pybind11::bytes(retString));
+#else
+   retCb(-1, retString.c_str());
+#endif
+        return retString;
+    }
+
+
+    ...yknote---代码已经改动！！！
+    比较接近的是
+        void ChatGLMModel::FillLLMInputs(std::vector <std::vector <float> > &inputTokens,
+                                         const std::map <std::string, int> &params,
+                                         Data &inputIds, Data &attentionMask, Data &positionIds) {
+
+                                         }
+这里需要注意的是对于postionIds的更新对应的huggingface代码链接在：https://huggingface.co/THUDM/chatglm2-6b/blob/main/modeling_chatglm.py#L881-L887 。
+
+核心部分的实现就是这2个函数，其它函数读者感兴趣可以自行阅读这里的源码。要在FastLLM中自定义一个模型，需要实现的核心部分就是这个模型文件了，从目前FastLLM提供的组件来看，基于Transformer架构的开源大模型支持的难度和工作量会比较小，而对于新的架构比如RWKV支持起来就会比较麻烦，需要写大量算子，如果考虑到优化则工作量就会更大。
+
+比较期待FastLLM推出ONNX的支持，这样就可以更方便的和各种类型的大模型对接起来。
+
+
+0x4. FastLLM 优化技巧简介
+FastLLM支持X86/Arm/CUDA 3种架构的硬件，也就是说它的算子分别考虑了这几个架构的优化。
+此外，FastLLM除了支持FP32/FP16/BF16之外还支持INT8/INT4量化计算。
+所以FastLLM的优化就是在不同的平台上为不同的Bit数的数据实现Kernel，并且使用硬件特有的指令集来进行加速比如AVX2，Neon Instrics。
+在CUDA实现上，FastLLM并没有采用kernel fuse的方式进行进一步加速，这里的优化空间还是比较大的。
+
+介于篇幅原因，更多的系统和Kernel实现细节在后面的文章讨论。
+
+0x5. 总结
+本文主要是对FastLLM做了一个简要介绍，展示了一下FastLLM的部署效果。
+然后以chatglm-6b为例，对FastLLM模型导出的流程进行了解析，接着解析了chatglm-6b模型部分的核心实现，
+这部分代码基本是对huggingface的chatglm-6b代码进行了一对一翻译。
+最后还对FastLLM涉及到的优化技巧进行了简单的介绍。
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

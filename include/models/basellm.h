@@ -95,7 +95,7 @@ namespace fastllm {
 
         virtual std::string Response(const std::string &input,
                                      RuntimeResult retCb,
-                                     const GenerationConfig &generationConfig = GenerationConfig());
+                                     const GenerationConfig &generationConfig = GenerationConfig()); // 根据给出的内容回复
 
         virtual void ResponseBatch(const std::vector<std::string> &inputs,
                                    std::vector<std::string> &outputs,

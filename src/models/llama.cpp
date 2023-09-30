@@ -560,6 +560,7 @@ namespace fastllm {
     std::string LlamaModel::Response(const std::string& input, RuntimeResult retCb,
                                      const GenerationConfig &generationConfig) {
 #ifdef USE_CUDA
+        // 清理 CUDA 的大缓冲区。
         FastllmCudaClearBigBuffer();
 #endif
 //auto st = std::chrono::system_clock::now();
@@ -635,9 +636,14 @@ namespace fastllm {
             }
             results.clear();
 
+            // 将 attentionMask 和 positionIds 移动到 CPU 设备上。
             attentionMask.ToDevice(DataDevice::CPU);
             positionIds.ToDevice(DataDevice::CPU);
+
+             // 更新 inputIds 为最新生成的token ret。
             inputIds.CopyFrom(Data(DataType::FLOAT32, {1, 1}, {(float)ret}));
+
+            // 更新 attentionMask 和 positionIds。
             attentionMask = Data();
             positionIds.CopyFrom(Data(DataType::FLOAT32, {1, 1}, {(float)len}));
             //if (do_sample) {
