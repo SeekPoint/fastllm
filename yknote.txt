@@ -1,28 +1,9 @@
-fastllm源码解析
-[fastllm]cuda-kernels源码解析
-[cuda]RMSNorm核函数解析
-https://zhuanlan.zhihu.com/p/651923791
-https://zhuanlan.zhihu.com/p/651016911
-https://zhuanlan.zhihu.com/p/651144351
-
-https://blog.csdn.net/sinat_37574187/article/details/132207393
-fastllm 大模型cuda推理加速 源码解析 之 CMakelist.txt
-
-
-https://cloud.tencent.com/developer/article/2315021
-大模型部署框架 FastLLM 实现细节解析  BBuf
-
-https://cloud.tencent.com/developer/article/2315006
-大模型部署框架 FastLLM 简要解析  BBuf
-
 
 if ("model_type" not in modelInfo):
 
 v0.1.3没有
 
 ---ae46cdf5d534572ac98aae28e99a4163f6b45f7e  添加 ae46cdf5 huangyuyang <huang.yuyang@think-force.com> on 7/12/2023 at 1:27 PM
-
-
 
 
 
