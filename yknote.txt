@@ -32,6 +32,9 @@ https://zhuanlan.zhihu.com/p/651923791
 https://zhuanlan.zhihu.com/p/651016911
 [fastllm]fastllm源码结构解析
 
+https://zhuanlan.zhihu.com/p/652506789
+多线程下动态组batch实现解析
+
 
 https://blog.csdn.net/sinat_37574187/article/details/132207393
 fastllm 大模型cuda推理加速 源码解析 之 CMakelist.txt
