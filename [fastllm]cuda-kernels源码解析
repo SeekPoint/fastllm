@@ -1,0 +1,22 @@
+[fastllm]cuda-kernels源码解析
+
+https://zhuanlan.zhihu.com/p/651923791
+
+    gemv_int4 kernels 解析
+    GEMV int8 kernels
+    GEMM int8 kernels
+    RMS kernels解析
+    softmax kernels 解析
+    RotatePosition2D Kernels解析
+    AttentionMask Kernels 解析
+    swiglu kernels解析
+
+接着前面第一篇架构的分析，这篇文章主要分析fastllm中使用cuda-kernels的写法，
+在fastllm中主要有以下几种使用频率较高的kernel：
+
+gemv_int4, gemv_int8, gemm_int8, RMSNorm, softmax，RotatePosition2D，swiglu等，
+其中compute-mound的是gemm，其余大都是memory-bound。
+
+其主要的提升点在于量化bit的计算比原生的torch转为float计算会更快，
+
+另外由于没有加fuse的操作，所以还是有可优化的空间。

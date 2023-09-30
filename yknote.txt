@@ -23,15 +23,15 @@ v0.1.3没有
 ---ae46cdf5d534572ac98aae28e99a4163f6b45f7e  添加 ae46cdf5 huangyuyang <huang.yuyang@think-force.com> on 7/12/2023 at 1:27 PM
 
 
-fastllm源码解析
-[fastllm]cuda-kernels源码解析
-[cuda]RMSNorm核函数解析
+
+
+
 https://zhuanlan.zhihu.com/p/651923791
+[fastllm]cuda-kernels源码解析
 
 https://zhuanlan.zhihu.com/p/651016911
 [fastllm]fastllm源码结构解析
 
-https://zhuanlan.zhihu.com/p/651144351
 
 https://blog.csdn.net/sinat_37574187/article/details/132207393
 fastllm 大模型cuda推理加速 源码解析 之 CMakelist.txt

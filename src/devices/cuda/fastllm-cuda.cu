@@ -95,7 +95,18 @@ __global__ void FastllmSiluKernel(float* a, float *b, int len) {
         b[idx] = x / (1.0 + expf(-x));
     }
 }
+/*
+swiglu kernels解析
+功能：几种常见的激活函数
 
+__global__ void FastllmSwigluKernel(float* a, float *b, int len, int spatial, int mid) {
+
+__global__ void FastllmGeluKernel(float* a, float *b, int len) {
+
+__global__ void FastllmSiluKernel(float* a, float *b, int len) {
+
+没太多好说的，因为是原地操作，thread够用，按公式手写即可。
+*/
 __global__ void FastllmSwigluKernel(float* a, float *b, int len, int spatial, int mid) {
     int idx = threadIdx.x + blockIdx.x * blockDim.x;
     if (idx < len) {
@@ -136,6 +147,14 @@ __global__ void FastllmMulToKernel(float* a, float *b, float alpha, int len) {
     }
 }
 
+// AttentionMask Kernels 解析
+// 功能：对对应位置上的按照mask掩码的方式置maskv值。
+// __global__ void FastllmAttentionMaskKernel(float* a, float *b, float maskValue, int n, int m, int spatial) {
+//
+// __global__ void FastllmAlibiMaskKernel(float* a, float *b, float maskValue, int n,
+//             int m, int spn, int spm, int spatial) {
+// 线程按照m*n的方式进行拆分了，普通mask直接置为maskv,Alibimask则是置为了相对位置上的值的和。
+// 这里spatial的值含义还存在一些疑惑？
 template <int THREAD_PER_BLOCK>
 __global__ void FastllmAttentionMaskKernel(float* a, float *b, float maskValue, int n, int m, int spatial) {
     int on = blockIdx.x / m;
@@ -214,6 +233,30 @@ __global__ void FastllmPermuteKernel(float *dst, float *ori, int *temp, int axis
         dst[i] = ori[old];
     }
 }
+
+
+// RotatePosition2D Kernels解析
+// 功能：旋转位置编码，
+// 线程在这里完全展开了，相当于铺开了3层循环。
+// 这里谈谈三者的区别，
+// __global__ void FastllmLlamaRotatePosition2DKernel
+//(float *data, float *positionIds, float *sin, float *cos,
+//                                                    int len, int bs, int spatial, int n, int m,
+// int partStride, int sinCosStride, int rotateDim) {
+//
+// __global__ void FastllmNearlyRotatePosition2DKernel
+//(float *data, float *positionIds, float *sin, float *cos,
+//                                                    int len, int bs, int spatial, int n, int m,
+// int partStride, int sinCosStride, int rotateDim) {
+//
+// __global__ void FastllmRotatePosition2DKernel
+//(float *data, float *positionIds, float *sin, float *cos,
+//                                               int len, int bs, int spatial, int n, int m,
+// int partStride, int sinCosStride, int rotateDim)
+// LlamaRotatePosition2D是以前半段和后半段进行旋转计算的，
+// NearlyRotatePosition是在两个相近点位置上进行计算的，
+// RotatePosition2D则是先分成两部分，
+// 每部分再以m/4段进行计算的，差别在于旋转位置的不同。
 
 // float *data：输入数据，大小为 [bs, len, n, m]，其中 bs 是批量大小，
 // len 是序列长度，n 是头的数量，m 是每个头的维度。
@@ -362,6 +405,12 @@ __device__ void FastllmSoftmaxKernelInner1Func(float *input, float *output, int 
     }
 }
 
+// softmax kernels 解析
+// 功能: 计算inputs的softmax值，计算公式为
+
+// 首先每个线程计算一部分找到max值，sdata计算的是block内同余的maxv值，规约得到全局最大值。
+// 然后计算每个input的指数表示，并进行规约求和，与上述结果一致，需要对下溢出的float置较小的数。
+// 最后将结果更新到output中。
 template <int THREAD_PER_BLOCK>
 __global__ void FastllmSoftmaxKernelInner1(float* input, float *output, int outer, int channels) {
     int o = blockIdx.x;
@@ -375,6 +424,12 @@ __global__ void FastllmSoftmaxKernelBatchInner1(uint8_t** pointer) {
                                                        (int)((size_t)pointer[o * 3 + 2]));
 }
 
+// RMS kernels解析
+// 功能： 实现RMSNorm，其数学公式为 RMSNorm = ( x / sqrt(sum(xi2)) / n + eps）)
+
+// 每个block对应位置计算的是同余线程的部分和，sum2即累加了同余线程的部分和。
+// 通过规约当前block内的所有和得到 sum(xi2),也即为sdata[0]。
+// 得到所有和之后便可以计算出scale的值，通过scale更新每个output。
 template <int THREAD_PER_BLOCK>
 __global__ void FastllmRMSNormKernelInner1(float *input, float *weight, float *output, int outer, int channels, float eps) {
     int o = blockIdx.x;
@@ -413,6 +468,15 @@ __global__ void FastllmRMSNormKernelInner1(float *input, float *weight, float *o
     }
 }
 
+/*
+layerNorm 实现
+
+功能：实现layernorm，数学计算公式为 layerNorm = (x - u )/ o
+
+sdata中保存的是用于计算均值的所有和，sdata2中保存的是计算方差的所有平方和的值。
+按照同余线程的方法进行计算部分和，然后进行规约得到全局的和，得到mean和var。
+最后按照计算公式更新output即可。
+*/
 template <int THREAD_PER_BLOCK>
 __global__ void FastllmLayerNormKernelInner1(float *input, float *gamma, float *beta, float *output, int outer, int channels) {
     int o = blockIdx.x;
@@ -458,6 +522,7 @@ __global__ void FastllmLayerNormKernelInner1(float *input, float *gamma, float *
     }
 }
 
+// 和layernorm好像没太大关系，找最大值的函数，与求和操作基本一样。
 template <int THREAD_PER_BLOCK>
 __global__ void FastllmLayerNormKernelTop1(float *input, float *output, int channels) {
     __shared__ float idData[THREAD_PER_BLOCK];
@@ -490,6 +555,16 @@ __global__ void FastllmLayerNormKernelTop1(float *input, float *output, int chan
     }
 }
 
+// GEMM int8 kernels
+// 功能：对于矩阵n*m以及矩阵m*k，计算他们的矩阵乘积。
+/*
+shareA和shareB都属于block内内存，localSum是global内存，线程又被分为8个为一个wrap。
+预取A矩阵的部分数据到shareA，其大小Nblock*MBlock,shareB的大小为KBlock*Mblock，这里将未使用到的置为0,可能会有一定浪费。
+然后按32*4大小的size进行计算localsum(即每个位置上的数实际是4个乘加部分和)，这里感觉有优化空间，因为不是每个gpu的blcok内存都一样为32个和。
+最后以32为单位成块成块地更新output。
+
+
+*/
 template <int NBlock, int MBlock, int KBlock>
 __global__ void FastllmCudaBaseGemmKernelInt8(float *A, uint8_t *B, float *C,
                                               float *bias, float *scales, uint8_t *zeros,
@@ -591,6 +666,7 @@ __global__ void FastllmGemvFp32Fp32Kernel2(float *A, float *B, float *C, float *
     }
 }
 
+//与int8类似，采用fp16的精度。 ==FastllmGemvInt8Kernel2
 template <int THREAD_PER_BLOCK, int PART>
 __global__ void FastllmGemvFp32Fp16Kernel2(float *A, half *B, float *C, float *bias, int m, int k) {
     __shared__ float sdata[THREAD_PER_BLOCK];
@@ -619,6 +695,12 @@ __global__ void FastllmGemvFp32Fp16Kernel2(float *A, half *B, float *C, float *b
     }
 }
 
+// GEMV int8 kernels
+// 功能： 对于n*m的矩阵和向量m*1，计算其MV的值。
+
+// 将n化为多个tile,多个tile之间并行。
+// block内保存的是同余线程的部分和，需要注意的是需要将B减去对应的zero，这里B被隐式转化为了float32。
+// 将block内的部分和进行规约得到当前tile内的所有mv的和，更新tile内的所有output，最终形状为n*1。
 template <int THREAD_PER_BLOCK, int PART>
 __global__ void FastllmGemvInt8Kernel2(float *A, uint8_t *B, float *C,
                                        float *bias, float *scales, uint8_t *zeros,
@@ -713,6 +795,8 @@ __global__ void FastllmGemvInt8Kernel1(float *A, uint8_t *B, float *C,
     }
 }
 
+
+//与上述的nozero版本基本类似，只不过偏置值由保存的minv变为了zeros。
 template <int THREAD_PER_BLOCK, int PART>
 __global__ void FastllmGemvInt4Kernel2(float *A, uint8_t *B, float *C,
                                        float *bias, float *scales, uint8_t *zeros,
@@ -745,6 +829,12 @@ __global__ void FastllmGemvInt4Kernel2(float *A, uint8_t *B, float *C,
     }
 }
 
+// gemv_int4 kernels 解析
+// 功能：实现float32*int4 GEMV乘积，其中偏置值为最小值。
+
+// 对于n*m的矩阵，以及第二个乘数向量m*1, 划分成不同的tile进行计算，不同的tile之间并行，首先通过遍历m/2，找到m列位置上的对应int4的值。
+// 通过保存的mins找到最小值minv，同一个group（两个int4组成的int8）共享同一个minv，实际每次计算的结果为两个float*int4之后的部分和。
+// 然后将结果规约到sdata[0]上，将对应m列位置上的output值进行更新，每次得到一个tile大小的最终结果，最终结果向量为n*1。
 template <int THREAD_PER_BLOCK, int PART>
 __global__ void FastllmGemvInt4NoZeroKernel2(float *A, uint8_t *B, float *C,
                                              float *bias, float *scales, float *mins,
