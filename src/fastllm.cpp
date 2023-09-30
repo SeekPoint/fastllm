@@ -755,42 +755,77 @@ namespace fastllm {
         return ret;
     }
 
+    // 这是 Tokenizer 类的嵌套结构 TrieNode 的构造函数的实现。
+   // 在构造函数中，将 tokenId 成员变量的值初始化为 -999999。
+   // 这个值在构造函数中被硬编码，它是作为一个特殊标记来使用的。
     Tokenizer::TrieNode::TrieNode() {
         this->tokenId = -999999;
     }
 
+    // Tokenizer 类的构造函数的实现。
+    // 在构造函数中，通过 new 运算符创建一个新的 TrieNode 对象，
+    // 并将其指针赋值给 root 成员变量。这样，构造函数创建了一个空的字典树，
+    // 并将其根节点指针存储在 root 中。
     Tokenizer::Tokenizer() {
         root = new TrieNode();
     }
 
+    // Tokenizer 类的析构函数的实现。
+    // 在析构函数中，首先调用 Clear() 函数，用于释放动态分配的资源和清空数据。
+    // 然后，调用 delete 运算符释放通过 new 运算符创建的 root 对象的内存，从而释放整个字典树的内存。
     Tokenizer::~Tokenizer() {
         Clear();
         delete root;
     }
 
+    // 这是 Tokenizer 类的成员函数 Clear() 的定义，用于清空分词器并释放动态分配的资源。
     void Tokenizer::Clear() {
+        // 创建一个指向 TrieNode 的指针向量 q，用于辅助遍历字典树。
         std::vector <TrieNode*> q;
+        // 将字典树的根节点 root 加入 q 向量，作为遍历的起始点。
         q.push_back(root);
+        // 开始遍历 q 向量中的节点，这是一个广度优先搜索（BFS）的过程。
         for (int i = 0; i < q.size(); i++) {
+            // 取出当前遍历到的节点 now。
             TrieNode *now = q[i];
+            // 对当前节点 now 的所有子节点进行遍历。
             for (auto it : now->next) {
+                // 将当前节点 now 的子节点加入 q 向量中，以便继续遍历子节点的子节点。
                 q.push_back(it.second);
             }
         }
+        // 当遍历完成后，q 向量中包含了字典树中的所有节点。
+        // 创建一个新的 TrieNode 对象，并将其指针赋值给 root 成员变量，表示创建了一个空的字典树。
         root = new TrieNode();
+        //  清空 tokenToStringDict 映射表，以确保所有 token 的映射被清空。
         tokenToStringDict.clear();
     }
 
+    // 这是 Tokenizer 类的成员函数 Insert 的定义，用于向分词器中插入一个 token。
     void Tokenizer::Insert(const std::string &s, int tokenId, float score) {
+        // 创建一个指向 TrieNode 的指针 now，并将其初始化为指向字典树的根节点 root。
         TrieNode *now = this->root;
+        // 开始遍历输入的字符串 s 中的每个字符。
         for (int i = 0; i < s.size(); i++) {
+            // 检查当前字符 s[i] 是否已经存在于当前节点 now 的 next 映射表中。
+            // 如果当前字符 s[i] 不存在于当前节点 now 的子节点中，
+            // 在 now->next 中添加新的子节点，该子节点的键为当前字符 s[i] 的编码值，
+            // 值为指向新创建的 TrieNode 对象的指针。这表示在字典树中添加了一个新的字符节点。
             if (now->next.find(s[i]) == now->next.end()) {
                 now->next[s[i]] = new TrieNode();
             }
+            // 将 now 移动到下一个字符 s[i] 对应的节点，以便继续处理下一个字符。
             now = now->next[s[i]];
         }
+
+        // 遍历完成后，now 将指向字典树中最后一个字符的节点。
+        // 设置当前节点的 tokenId 成员变量，表示当前节点代表一个 token，
+        // 并使用传入的 tokenId 值来标识该 token。
         now->tokenId = tokenId;
         now->score = score;
+
+        // 将传入的 tokenId 和对应的字符串 s 添加到 tokenToStringDict
+        // 映射表中，用于后续的解码过程。
         tokenToStringDict[tokenId] = s;
         stringToTokenDict[s] = tokenId;
     }
@@ -827,6 +862,7 @@ namespace fastllm {
         return std::numeric_limits<int>::max();
     }
 
+    // 这是 Tokenizer 类的成员函数 Encode 的定义，用于对输入的字符串 s 进行编码。
     Data Tokenizer::Encode(const std::string &ori) {
         if (this->type == TokenizerType::BPE) {
             std::string blank = "";
@@ -844,7 +880,7 @@ namespace fastllm {
                     s += ori[i];
                 }
             }
-
+            // 创建一个浮向量，用于存储编码结果。
             std::vector<Symbol> symbols;
             for (int i = 0; i < s.size(); i++) {
                 if (i + 3 < s.size() && s[i] == '<' && s[i + 1] == 'F' && s[i + 2] == 'L' && s[i + 3] == 'M') {
@@ -860,13 +896,20 @@ namespace fastllm {
                         continue;
                     }
                 }
-
-                int tokenId = -999999, pos = i - 1;
-                TrieNode *now = this->root;
-                for (int j = i; j < s.size(); j++) {
-                    if (now->next.find(s[j]) != now->next.end()) {
-                        now = now->next[s[j]];
-                        if (now->tokenId != -999999) {
+            // 创建两个整数变量 tokenId 和 pos，
+            // 用于记录找到的 token 的 tokenId 值和 token 的结束位置。
+            int tokenId = -999999, pos = i - 1;
+            // 创建一个指向 TrieNode 的指针 now，并将其初始化为指向字典树的根节点 root。
+            TrieNode *now = this->root;
+            // 从当前字符 s[i] 开始继续遍历字符串 s。
+            for (int j = i; j < s.size(); j++) {
+              // 检查当前字符 s[j] 是否存在于当前节点 now 的 next 映射表中。
+              // 如果存在，表示当前字符构成了一个 token 的一部分，继续遍历子节点。
+                if (now->next.find(s[j]) != now->next.end()) {
+                    // 将 now 移动到下一个字符 s[j] 对应的节点。
+                    now = now->next[s[j]];
+                    // 检查当前节点 now 是否代表一个 token，即它的 tokenId 是否有效。
+                    if (now->tokenId != -999999) {
                             tokenId = now->tokenId;
                             pos = j;
                             break;
@@ -987,6 +1030,8 @@ namespace fastllm {
                             if (now->next.find(subStr[j]) != now->next.end()) {
                                 now = now->next[subStr[j]];
                                 if (now->tokenId != -999999) {
+				    // 如果当前节点代表一个 token，将 tokenId 和当前位置 j 存储到
+                                    // tokenId 和 pos 变量中，以便记录找到的 token 的信息。
                                     tokenId = now->tokenId;
                                     pos = j;
                                     break;
@@ -1170,20 +1215,37 @@ namespace fastllm {
                         break;
                     }
                 }
+
+		// 如果 pos 大于等于当前位置 i，表示找到了一个 token。
+                // 这里 pos 存储了找到的 token 的结束位置，i 移动到 pos 处，以便继续遍历下一个字符。
                 if (pos >= i) {
                     i = pos;
-                    v.push_back(tokenId);
-                }
+                v.push_back(tokenId);
+                //printf("%d ", tokenId);
             }
-
-            return Data (DataType::FLOAT32, {1, (int)v.size()}, v);
         }
+        //printf("\n");
+        // 遍历完成后，v 向量中存储了输入字符串中所有找到的 token 对应的 tokenId 值。
+        // 创建一个 Data 对象并返回，表示编码的结果。这里 Data 是一个数据结构，
+        // 用于存储数据及其相关信息。编码结果是一个一维浮点数数组，
+        // 表示输入字符串中所有找到的 token 对应的 tokenId 值。
+        return Data (DataType::FLOAT32, {1, (int)v.size()}, v);
     }
 
+    // 这是 Tokenizer 类的成员函数 DecodeTokens 的定义，
+    // 用于对输入的 token 数组进行解码，将 token 转换回原始的字符串。
     std::string Tokenizer::DecodeTokens(const std::vector<int> &tokens) {
+        // 创建一个空字符串 ret，用于存储解码结果。
         std::string ret = "";
+        // 开始遍历输入的 token 数组 tokens。
         for (int i = 0; i < tokens.size(); i++) {
+            // 获取当前 token 对应的原始字符串 s，通过查询 tokenToStringDict 映射表，
+            // 将 tokens[i] 转换回字符串。
             std::string s = tokenToStringDict[tokens[i]];
+            // 判断当前 token 是否需要特殊处理：
+            // 如果 s 是类似 "<0xHH>" 格式的 token（其中 HH 表示十六进制数），
+            // 则需要将其转换为对应的字符。首先，提取 HH，然后将其转换为对应的字符，
+            // 并用空格代替原始的 token。
             if (s.size() == 6 && s.substr(0, 3) == "<0x" && s.back() == '>') {
                 int c = 0;
                 for (int i = 3; i < 5; i++) {
@@ -1198,6 +1260,7 @@ namespace fastllm {
                 s = " ";
                 s[0] = c;
             }
+            // 根据不同的 token 进行解码：
             if (s == "<n>") {
                 ret += "\n";
             } else if (s == "<|tab|>") {
@@ -1207,6 +1270,7 @@ namespace fastllm {
             }
         }
 
+        // 将特殊字符 "\xE2\x96\x81"（UTF-8 编码）替换为空格 " "，这是用于表示空格的特殊字符。
         std::string blank = "";
         blank += 226, blank += 150, blank += 129;
         while (true) {
@@ -1215,6 +1279,7 @@ namespace fastllm {
                 ret.replace(pos, blank.length(), " ");
             else break;
         }
+        // 检查是否有 "<|blank_数字>" 格式的特殊 token，如果有，将其解码成对应数量的空格字符。
         int pos = ret.find("<|blank_");
         if (pos != -1) {
             int space_num = atoi(ret.substr(8, ret.size() - 10).c_str());
@@ -1244,31 +1309,48 @@ namespace fastllm {
 
     Random fastllmRandom;
 
+    // 这段代码是一个用于从给定的 logits（通常表示预测的概率分布）进行采样的函数，
+    // 采样策略主要受 GenerationConfig 和 LastTokensUnit 参数的影响。
     int LLMSampling(Data &logits, int outerOffset,
                     const GenerationConfig &config, const LastTokensUnit &tokens) {
+        // 将 logits 数据从当前设备转移到 CPU。
         logits.ToDevice(DataDevice::CPU);
+        // 从 logits 的维度中获取词汇量 vocabSize。
         int vocabSize = logits.dims.back();
+        // 计算 base 指针，指向要处理的 logits 的开始位置。
         float *base = ((float*)logits.cpuData) + outerOffset * vocabSize;
 
+        // 判断 config.repeat_penalty 是否不等于1，如果不等于1，
+        // 则对 tokens.tokenSet 中每个 id 对应的 base[id] 值进行修改。
         if (fabs(config.repeat_penalty - 1.0) > 1e-6) {
             for (int id : tokens.tokenSet) {
                 base[id] = (base[id] < 0 ? base[id] * config.repeat_penalty : base[id] / config.repeat_penalty);
             }
         }
+        // 计算温度的倒数 invTemp。
         float invTemp = 1.0f / config.temperature;
+        // 定义一个向量 v，用于存储 <logit值，索引>。
         std::vector <std::pair <float, int> > v;
+        // 遍历每个 logit，将其值乘以 invTemp，并存入 v 中。
         for (int i = 0; i < vocabSize; i++) {
             v.push_back(std::make_pair(-base[i] * invTemp, i));
         }
+        // 计算 topk，它是词汇量 vocabSize 和 config.top_k 中的较小值。
         int topk = std::min(vocabSize, config.top_k);
+        // 对 v 中的前 topk 个元素进行排序。
         std::partial_sort(v.begin(), v.begin() + topk, v.end());
+        // 初始化 psum 和 maxValue，maxValue 是 v 中最大的元素。
         float psum = 0.0, maxValue = -v.begin()->first;
+        // 定义一个向量 ps，用于存储处理后的概率。
         std::vector <float> ps;
+        // 遍历 v 中的前 topk 个元素，将其值取 exp 并减去 maxValue，存入 ps，同时更新 psum。
         for (int i = 0; i < topk; i++) {
             ps.push_back(expf(-v[i].first - maxValue));
             psum += ps.back();
         }
         float curSum = 0.0;
+        // 遍历 ps，将其每个元素除以 psum 并更新 curSum，
+        // 当 curSum 大于 config.top_p 时，更新 topk 并退出循环。
         for (int i = 0; i < topk; i++) {
             ps[i] /= psum;
             curSum += ps[i];
@@ -1277,14 +1359,20 @@ namespace fastllm {
                 break;
             }
         }
+
+	// 生成一个随机数 rnd
         float rnd = fastllmRandom.randP() * curSum;
         curSum = 0.0;
+        // 遍历 ps 中的前 topk 个元素，将其累加到 curSum，
+        // 当 curSum 大于 rnd 或者达到最后一个元素时，
+        // 返回对应 v[i].second，也就是返回采样得到的 id。
         for (int i = 0; i < topk; i++) {
             curSum += ps[i];
             if (curSum > rnd || i == topk - 1) {
                 return v[i].second;
             }
         }
+        // 如果以上步骤都没有返回，那么返回 -1。
         return -1;
     }
 

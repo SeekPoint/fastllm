@@ -291,7 +291,7 @@ namespace fastllm {
 
         void PrintShape() const; // 输出形状
 
-        std::vector<int> Shape() const; 
+        std::vector<int> Shape() const;
 
         void Print() const; // 输出
 

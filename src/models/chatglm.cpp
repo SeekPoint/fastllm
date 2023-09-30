@@ -397,15 +397,19 @@ namespace fastllm {
         // 如果生成配置指定了简单的贪心策略，那么就从 logits 中找出最大的值作为预测结果；
         // 否则，使用 LLMSampling 函数根据 logits 和生成配置来选择预测结果。
         if (generationConfig.IsSimpleGreedy()) {
+            // 对 logits 进行 TopK 操作，将结果存储在 topk 中。
+            // 这里的 TopK 操作是找到 logits 中最大的 K 个值，这里 K=1，所以是找到最大值。
             TopK(logits, topk, 1);
             topk.ToDevice(DataDevice::CPU);
             for (int b = 0; b < batch; b++) {
-                int base = (maxLen - 1) * batch + b;
+                int base = (maxLen - 1) * batch + b;// 计算基础索引值 base。
+                // 将 topk 中对应索引的值取整并添加到 lastRet 中。
                 lastRet.push_back((int) (((float *) topk.cpuData)[base * 2] + 1e-3));
             }
         } else if (!lastTokens.units.empty()) {
             for (int b = 0; b < batch; b++) {
-                int base = (maxLen - 1) * batch + b;
+                int base = (maxLen - 1) * batch + b; // 计算基础索引值 base。
+                // 使用 LLMSampling 方法进行抽样，将结果添加到 lastRet 中。
                 lastRet.push_back(LLMSampling(logits, base, generationConfig, lastTokens.units[b]));
             }
         }

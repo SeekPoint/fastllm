@@ -215,19 +215,30 @@ __global__ void FastllmPermuteKernel(float *dst, float *ori, int *temp, int axis
     }
 }
 
+// float *data：输入数据，大小为 [bs, len, n, m]，其中 bs 是批量大小，
+// len 是序列长度，n 是头的数量，m 是每个头的维度。
+// float *positionIds：位置编码的索引，大小为 [bs, len]。
+// float *sin 和 float *cos：预先计算的正弦和余弦值，用于旋转编码。
+// int len, int bs, int spatial, int n, int m：输入数据的各个维度大小。
+// int partStride 和 int sinCosStride：用于索引 positionIds 和 sin/cos 的步长。
+// int rotateDim：旋转维度。
 __global__ void FastllmLlamaRotatePosition2DKernel(float *data, float *positionIds, float *sin, float *cos,
                                                    int len, int bs, int spatial, int n, int m, int partStride, int sinCosStride, int rotateDim) {
+    // 首先，计算出当前线程应处理的位置 o，长度 l 和批次 b。
     int o = (blockIdx.x / n);
     int l = o % len;
     int b = o / len;
     int j = threadIdx.x;
+    // 然后，根据 positionIds 获取对应的旋转角度的正弦值 curSin 和余弦值 curCos。
     int index = (int) (positionIds[b * partStride + l]);
 
     float curSin = sin[index * sinCosStride + j];
     float curCos = cos[index * sinCosStride + j];
     float *d = (float *) data + o * spatial + j;
     int i = blockIdx.x % n;
+    // 接着，获取输入数据对应位置的值 va 和 vb。
     float va = d[i * m], vb = d[i * m + m / 2];
+    // 最后，根据旋转矩阵的公式，计算旋转后的值，并将结果写回输入数据中。
     d[i * m] = va * curCos - vb * curSin;
     d[i * m + m / 2] = va * curSin + vb * curCos;
 }
@@ -2185,24 +2196,43 @@ bool FastllmCudaNearlyRotatePosition2D(fastllm::Data &data, const fastllm::Data 
     return true;
 }
 
+// 这是一个在 GPU 上运行的 CUDA 函数，用于执行 Llama 模型的位置编码旋转操作。
+// data：输入的数据，这个数据将会被旋转。
+// positionIds：位置编码的数据。
+// sinData，cosData：用于旋转的 sin 和 cos 值。
+// rotaryDim：旋转的维度。
 bool FastllmCudaLlamaRotatePosition2D(fastllm::Data &data, const fastllm::Data &positionIds,
                                       const fastllm::Data &sinData, const fastllm::Data &cosData, int rotaryDim) {
+    // 使用 FastllmCudaPrepareInput 函数将输入的数据从 CPU 复制到 GPU。
+    // 这个函数会返回一个指向 GPU 内存的指针。
     float *cudaData = (float *) FastllmCudaPrepareInput(data);
     float *cudaPositionIds = (float *) FastllmCudaPrepareInput(positionIds);
     float *cudaSin = (float *) FastllmCudaPrepareInput(sinData);
     float *cudaCos = (float *) FastllmCudaPrepareInput(cosData);
 
+    // 计算旋转操作需要的一些参数，包括 outer，spatial，bs，len，n 和 m。
+    // 这些参数是用于确定 CUDA 核函数的执行配置和一些数据操作的。
     int outer = data.dims[0] * data.dims[1];
     int spatial = data.Count(2);
     int bs = data.dims[0], len = data.dims[1];
     int n = data.dims[2], m = data.dims[3];
+
+    // 调用 CUDA 核函数 FastllmLlamaRotatePosition2DKernel 来在 GPU 上执行位置编码的旋转操作。
+    // <<<outer * n, min(rotaryDim, m / 2)>>> 是 CUDA 中定义并行线程块和线程的语法，
+    // outer * n 是线程块的数量，min(rotaryDim, m / 2) 是每个线程块中的线程数量。
+    // 核函数的参数包括之前准备的数据和一些计算参数。
     FastllmLlamaRotatePosition2DKernel <<< outer * n, min(rotaryDim, m / 2) >>> (cudaData, cudaPositionIds, cudaSin, cudaCos,
                                                                                  len, bs, spatial, n, m,
                                                                                  (int)positionIds.dims.back(), (int)sinData.dims[1], rotaryDim);
 
+    // 使用 FastllmCudaFinishInput 函数释放 positionIds，sinData 和 cosData 在 GPU 上的内存。
+    // 这些数据在这个函数中不再需要。
     FastllmCudaFinishInput(positionIds, cudaPositionIds);
     FastllmCudaFinishInput(sinData, cudaSin);
     FastllmCudaFinishInput(cosData, cudaCos);
+
+    // 使用 FastllmCudaFinishOutput 函数将旋转后的数据从 GPU 复制回 CPU。
+    // 这个函数也会释放 data 在 GPU 上的内存。
     FastllmCudaFinishOutput(data, cudaData);
     return true;
 }

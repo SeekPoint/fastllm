@@ -61,53 +61,81 @@ namespace fastllm {
         this->ops["AttentionBatch"] = (BaseOperator*)(new CpuAttentionBatchOp());
     }
 
+    // 这是 CpuDevice 类的成员函数 Malloc 的定义，用于在 CPU 上分配一块内存空间。
     bool CpuDevice::Malloc(void **ret, size_t size) {
         *ret = (void*)new uint8_t [size];
         return true;
     }
 
+    // 这是 CpuDevice 类的成员函数 Free 的定义，用于在 CPU 上释放之前分配的内存。
     bool CpuDevice::Free(void *ret) {
         delete[] (uint8_t*)ret;
         return true;
     }
 
+    // 这是 CpuDevice 类的成员函数 CopyDataFromCPU 的定义，用于将数据从 CPU 拷贝到指定的设备上。
+    // 这里什么都不做，直接返回true。
     bool CpuDevice::CopyDataFromCPU(void *dst, void *src, size_t size) {
         return true;
     }
 
+    // 这是 CpuDevice 类的成员函数 CopyDataToCPU 的定义，用于将数据从指定的设备拷贝到 CPU 上。
     bool CpuDevice::CopyDataToCPU(void *dst, void *src, size_t size) {
         return true;
     }
 
+// 如果定义了 __AVX__ 和 __AVX2__，那么会启用第一个 DotU8U8 函数和 DotU4U8 函数。
+// 如果只定义了 __AVX__，但没有定义 __AVX2__，那么会启用第二个 DotU8U8 函数和 DotU4U8 函数。
 
 #ifdef __AVX2__
+    // 这是一段使用了 Intel AVX2 指令集（Advanced Vector Extensions 2）的代码，
+    // 用于计算两个8位无符号整数数组的点积。
+    // 定义了一个函数 DotU8U8，它接受两个指向 8 位无符号整数的指针 a 和 b，
+    // 以及一个整数 n。这个函数的目的是计算数组 a 和 b 的点积，其中数组的长度为 n。
     int DotU8U8(uint8_t *a, uint8_t *b, int n) {
+        // 初始化一个 256 位的整数向量 acc，所有位都设置为零。这个向量用于存储点积的累加值。
         __m256i acc = _mm256_setzero_si256();
+        //  初始化两个变量，i 用于循环计数，ans 用于存储最后的结果。
         int i = 0;
         int ans = 0;
+        // 等这几行代码初始化了一些常量向量
         const __m256i lowMask = _mm256_set1_epi8(0xf);
         const __m256i ones = _mm256_set1_epi16(1);
         const __m256i ones8 = _mm256_set1_epi8(1);
         const __m256i xors = _mm256_set1_epi8(-128);
+        // 这是一个循环，每次处理 32 个元素。这是因为 AVX2 可以同时处理 32 个 8 位整数。
         for (; i + 31 < n; i += 32) {
+            // 这两行代码从数组 a 和 b 中加载数据到 256 位的向量 bx 和 by。
             __m256i bx = _mm256_loadu_si256((const __m256i *) (a + i));
             __m256i by = _mm256_loadu_si256((const __m256i *) (b + i));
 
+            // 这行代码将 by 中的每个元素减去 128，这对应于上面表达式中的 ((int)b[i] - 128)。
             by = _mm256_xor_si256(by, xors);
+            // 这行代码对于那些原本是 0 的元素（在减去 128 后变为 -128 的元素）加 1，
+            // 以避免后续乘法操作时的溢出。
             by = _mm256_add_epi8(by, _mm256_and_si256(_mm256_cmpeq_epi8(by, xors), ones8));
 
+            //  这行代码将 bx 中的符号应用到 by 中，对应于上面表达式中的 ((int8_t*)a)[i]。
             by = _mm256_sign_epi8(by, bx);
+            // 这行代码将 bx 中的所有非零元素变为 1，这是为了在后续的乘法操作中保持 by 中元素的原值。
             bx = _mm256_sign_epi8(bx, bx);
 
+            // 这行代码先对 bx 和 by 进行乘法运算（这对应于上面表达式中的 * 操作），
+            // 然后再与 acc 进行加法操作（这对应于上面表达式中的 += 操作）。
             acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_maddubs_epi16(bx, by), ones));
         }
+        // 这是另一个循环，用于处理数组中剩余的元素（数量小于 32）。
+        // 这些元素通过常规的方式计算点积，然后累加到 ans 中。
         for (; i < n; i++) {
             ans += ((int8_t*)a)[i] * ((int)b[i] - 128);
         }
 
+        // 最后，将 acc 中的所有元素相加，然后再加上 ans，返回最终的结果。
         return ans + I32sum(acc);
     };
 //#else
+    // 定义了一个函数 DotU8U8，它接受两个指向 8 位无符号整数的指针 a 和 b，
+    // 以及一个整数 n。这个函数的目的是计算数组 a 和 b 的点积，其中数组的长度为 n。
 //    int DotU8U8(uint8_t *a, uint8_t *b, int n) {
 //        __m256i acc = _mm256_setzero_si256();
 
@@ -132,18 +160,28 @@ namespace fastllm {
 
 //        return ans + I32sum(acc);
 //    };
+    // 它接受两个指向 8 位无符号整数的指针 a 和 b，以及一个整数 n。
+    // 这个函数的目的是计算数组 a 和 b 的点积，其中数组的长度为 n。
     int DotU4U8(uint8_t *a, uint8_t *b, int n) {
+        // 初始化一个 256 位的整数向量 acc，所有位都设置为零。这个向量用于存储点积的累加值。
         __m256i acc = _mm256_setzero_si256();
 
         int i = 0;
         int ans = 0;
+        // 初始化两个常量向量，lowMask 中的每个元素都是 0xf，ones 中的每个元素都是 1。
         const __m256i lowMask = _mm256_set1_epi8(0xf);
         const __m256i ones = _mm256_set1_epi16(1);
         for (; i + 31 < n; i += 32) {
+            // 从数组 a 中加载 16 个元素到 128 位的向量 orix 中。
+            // 这里 i / 2 的原因是每个元素实际上只有 4 位。
             __m128i orix = _mm_loadu_si128((const __m128i *) (a + i / 2));
+            // 将 orix 中的元素分成高 4 位和低 4 位，然后将它们合并成一个 256 位的向量 bytex。
             __m256i bytex = _mm256_set_m128i(_mm_srli_epi16(orix, 4), orix);
+            // 使用按位与操作，取 bytex 中的每个元素的低 4 位，结果存储在 bx 中。
             __m256i bx = _mm256_and_si256(lowMask, bytex);
+            // 从数组 b 中加载数据到 256 位的向量 by。
             __m256i by = _mm256_loadu_si256((const __m256i *) (b + i));
+            // 这行代码首先进行了两个向量的乘法累加操作，然后再与 acc 进行加法操作，结果存储在 acc 中。
             acc = _mm256_add_epi32(acc, _mm256_madd_epi16(_mm256_maddubs_epi16(by, bx), ones));
         }
         for (; i < n; i++) {
@@ -321,52 +359,90 @@ namespace fastllm {
         }
     }
 
-    void CpuEmbedding::Reshape(const std::string &opType, const fastllm::DataDict &datas,
+// CpuEmbedding 算子的形状推导函数，这个函数接受四个参数：
+// 一个 std::string 类型的 opType，两个字典类型的 datas 和 floatParams，以及一个 intParams。
+void CpuEmbedding::Reshape(const std::string &opType, const fastllm::DataDict &datas,
                                const fastllm::FloatDict &floatParams, const fastllm::IntDict &intParams) {
+        // 这三行代码从 datas 字典中查找键为 "input"、"output" 和 "weight" 的元素，
+        // 并将找到的元素的值赋给 input、output 和 weight。
+        // 这里的 "input"、"output" 和 "weight" 可以理解为嵌入层的输入、输出和权重。
         Data &input = *(datas.find("input")->second);
         Data &output = *(datas.find("output")->second);
         Data &weight = *(datas.find("weight")->second);
 
+        // 这行代码检查 weight 的维度数量是否为 2。如果不是，就会抛出一个错误。
         AssertInFastLLM(weight.dims.size() == 2, "Embedding's weight's dim should be 2.\n");
+        // 这行代码检查 weight 的数据类型是否为 FLOAT32 或 BFLOAT16。如果不是，就会抛出一个错误。
         AssertInFastLLM(weight.dataType == DataType::FLOAT32 ||
                         weight.dataType == DataType::BFLOAT16, "Embedding's weight's type should be float32 or bfloat16.\n");
+        // 这行代码检查 input 的数据类型是否为 FLOAT32。如果不是，就会抛出一个错误。
         AssertInFastLLM(input.dataType == DataType::FLOAT32, "Embedding's input's type should be float32.\n");
 
+        // 这行代码将 weight 的 weightType 属性设置为 EMBEDDING。
         weight.weightType = WeightType::EMBEDDING;
+        // 这行代码从 weight 的维度中提取词汇大小（vocabSize）和嵌入大小（embSize）。
         int vocabSize = weight.dims[0], embSize = weight.dims[1];
+        // 这两行代码将 embSize 添加到 input 的维度中，形成一个新的维度。
         std::vector <int> dims = input.dims;
         dims.push_back(embSize);
 
+        // 这两行代码将 output 的数据类型设置为 FLOAT32，并重新调整其维度。
         output.dataType = DataType::FLOAT32;
         output.Resize(dims);
     }
 
+    // 这是一个名为 CpuEmbedding::Run 的函数，它在某个名为 CpuEmbedding 的类中被定义。
+    // 这个函数接受四个参数：一个 std::string 类型的 opType，
+    // 两个字典类型的 datas 和 floatParams，以及一个 intParams。
+    // 这个函数的主要任务是执行嵌入层（Embedding layer）的运算。
+    // 嵌入层通常用于将离散型特征（例如词汇）转换为连续的向量表示。
+    // 具体的实现方法是，对于每个输入的索引，从权重矩阵中查找对应的行，
+    // 然后将其复制到输出矩阵的对应位置。
     void CpuEmbedding::Run(const std::string &opType, const fastllm::DataDict &datas,
                                const fastllm::FloatDict &floatParams, const fastllm::IntDict &intParams) {
+        // 这三行代码从 datas 字典中查找键为 "input"、"output" 和 "weight" 的元素，
+        // 并将找到的元素的值赋给 input、output 和 weight。
+        // 这里的 "input"、"output" 和 "weight" 可以理解为嵌入层的输入、输出和权重。
         Data &input = *(datas.find("input")->second);
         Data &output = *(datas.find("output")->second);
         Data &weight = *(datas.find("weight")->second);;
 
-        output.Allocate();
+        output.Allocate(); // 这行代码为 output 分配内存。
 
+        // 这行代码从 weight 的维度中提取词汇大小（vocabSize）和嵌入大小（embSize）。
         int vocabSize = weight.dims[0], embSize = weight.dims[1];
+        // 这行代码计算 input 的长度。
         uint64_t inputLen = input.Count(0);
+        // 这行代码获取 input 的数据，并将其转换为浮点数的指针。
         float *inputData = (float*)input.cpuData;
 
+        // 接下来的代码根据内存模式和权重的数据类型的不同，分别处理了四种情况。
+        // 这四种情况可以归纳为两个大类：内存模式和权重的数据类型。
+        // 内存模式：如果 GetLowMemMode() 返回 true，则表示处于低内存模式。
+        // 在这种模式下，权重数据不会一次性全部加载到内存中，而是每次只加载需要的部分。
+        // 否则，权重数据会全部加载到内存中。
         if (GetLowMemMode()) {
             FILE *fi = fopen(weight.fileName.c_str(), "rb");
+            // 权重的数据类型：如果权重的数据类型为 FLOAT32，则使用浮点数进行计算。
+            // 如果权重的数据类型为 BFLOAT16，则使用 16 位浮点数进行计算。
             if (weight.dataType == DataType::FLOAT32) {
                 float *outputData = (float *) output.cpuData;
                 for (int i = 0; i < inputLen; i++) {
+                    // 这行代码从 inputData 中取出第 i 个元素，并将其四舍五入到最近的整数。
                     int token = (int) (inputData[i] + 1e-9);
+                    // 这两行代码将文件指针移动到第 token 行的开始位置。
 #if defined(_WIN32) or defined(_WIN64)
                     _fseeki64(fi, (long long)token * embSize * sizeof(float) + weight.filePos, 0);
 #else
                     fseek(fi, (long long)token * embSize * sizeof(float) + weight.filePos, 0);
 #endif
+                    // 这行代码从文件中读取 embSize 个浮点数，并将它们存储在 outputData 的对应位置。
                     int ret = fread(outputData + i * embSize, sizeof(float), embSize, fi);
                 }
             } else {
+                // 如果权重的数据类型为 BFLOAT16，则使用 16 位浮点数进行计算。
+                // 这部分代码的逻辑与 FLOAT32 部分的逻辑类似，只是多了一个步骤：
+                // 将 16 位的浮点数转换为 32 位的浮点数。
                 uint16_t *outputData = (uint16_t *) output.cpuData;
                 uint16_t *weightData = new uint16_t[embSize];
                 for (int i = 0; i < inputLen; i++) {
@@ -384,13 +460,17 @@ namespace fastllm {
                 }
                 delete[] weightData;
             }
+            // 最后，fclose(fi); 这行代码关闭了文件。
             fclose(fi);
         } else {
             if (weight.dataType == DataType::FLOAT32) {
+                // 这两行代码获取 output 和 weight 的数据，并将它们转换为浮点数的指针。
                 float *outputData = (float *) output.cpuData;
                 float *weightData = (float *) weight.cpuData;
                 for (int i = 0; i < inputLen; i++) {
                     int token = (int) (inputData[i] + 1e-9);
+                    // 这行代码从 weightData 中复制 embSize 个浮点数到 outputData 的对应位置。
+                    // 这里的 token 是索引，embSize 是嵌入向量的长度。
                     memcpy(outputData + i * embSize, weightData + token * embSize, embSize * sizeof(float));
                 }
             } else {
@@ -407,33 +487,51 @@ namespace fastllm {
         }
     }
 
-    void CpuLayerNormOp::Run(const std::string &opType, const fastllm::DataDict &datas,
+void CpuLayerNormOp::Run(const std::string &opType, const fastllm::DataDict &datas,
                              const fastllm::FloatDict &floatParams, const fastllm::IntDict &intParams) {
+        // 这四行代码从 datas 字典中查找键为 "input"、"output"、"gamma" 和 "beta" 的元素，
+        // 并将找到的元素的值赋给 input、output、gamma 和 beta。
+        // 这里的 "input" 是层归一化的输入，"output" 是输出，
+        // "gamma" 和 "beta" 是用于对归一化后的结果进行缩放和移位的可学习参数。
         Data &input = *(datas.find("input")->second);
         Data &output = *(datas.find("output")->second);
         Data &gamma = *(datas.find("gamma")->second);
         Data &beta = *(datas.find("beta")->second);
 
+        // 这行代码为 output 分配内存。
         output.Allocate();
 
+        // 这行代码从 intParams 字典中查找键为 "axis" 的元素。
+        // 如果找到，则使用找到的值作为归一化的轴；否则，使用默认值 -1。在层归一化中，轴通常是特征维度。
         int axis = intParams.find("axis") != intParams.end() ? intParams.find("axis")->second : -1;
+        // 这两行代码计算 input 的维度数，并将 axis 转换为非负数。
+        // 这是为了处理负数的轴值，因为在 Python 中，轴可以是负数，表示从后向前数的位置。
         int dimsLen = input.dims.size();
         axis = (axis % dimsLen + dimsLen) % dimsLen;
 
+        // 这三行代码计算 outer、channels 和 inner。
+        // outer 是归一化操作的外部维度的元素总数，channels 是归一化操作的轴的大小，
+        // inner 是归一化操作的内部维度的元素总数。
         int outer = input.Count(0) / input.Count(axis);
         int channels = input.dims[axis];
         int inner = input.strides[axis];
 
+        // 这行代码为 mean 和 var 分配内存，它们用于存储每个归一化组的均值和方差。
         float *mean = new float[inner], *var = new float[inner];
         float *inputData = (float *) input.cpuData;
         float *outputData = (float *) output.cpuData;
         float *gammaData = (float *) gamma.cpuData;
         float *betaData = (float *) beta.cpuData;
 
+        // 在这个条件下，每个通道只有一个元素，所以可以并行地对每个通道进行层归一化。
         if (inner == 1) {
+            // 这是一个循环，对 input 中的每一个外部元素进行处理。
             for (int i = 0; i < outer; i++) {
+                // 这行代码定义了三个浮点数变量，分别用于存储均值、平方和和方差。
                 float mean = 0.f, s2 = 0.f, var = 0.f;
                 int j = 0;
+                // 这是一段条件编译的代码，只有在目标平台为 ARM 架构时才会编译和执行。
+                // 这段代码使用了 ARM 架构的 SIMD 指令来加速计算。
 #ifdef __aarch64__
                 float32x4_t sums = vdupq_n_f32(0.0);
                     float32x4_t sums2 = vdupq_n_f32(0.0);
@@ -446,6 +544,8 @@ namespace fastllm {
                     s2 = sums2[0] + sums2[1] + sums2[2] + sums2[3];
 #endif
 #ifdef __AVX2__
+                // 这是另一段条件编译的代码，只有在目标平台支持 AVX2 指令集时才会编译和执行。
+                // 这段代码使用了 AVX2 的 SIMD 指令来加速计算。
                 __m256 sum_vec = _mm256_setzero_ps();
                 __m256 squared_sum_vec = _mm256_setzero_ps();
 
@@ -469,12 +569,15 @@ namespace fastllm {
                                     squared_sum_array[4] + squared_sum_array[5] +
                                     squared_sum_array[6] + squared_sum_array[7];
 #endif
+                // 这是一个循环，对 input 中剩余的每一个通道进行处理。
                 for (; j < channels; j++) {
                     mean += inputData[j];
                     s2 += inputData[j] * inputData[j];
                 }
+                // 这两行代码计算了均值和方差。
                 mean /= channels;
                 var = sqrt(s2 / channels - mean*mean + 1e-10);
+                // 接下来是对output的每一个通道进行并行处理
                 j = 0;
 #ifdef __aarch64__
                 float32x4_t means = vdupq_n_f32(mean);
@@ -491,23 +594,35 @@ namespace fastllm {
                     outputData[j] = (inputData[j] - mean) / var * a + b;
                 }
 
+                // 这两行代码更新了 inputData 和 outputData 的指针位置，
+                // 以便在下一轮循环中处理下一个外部元素。
                 inputData += channels;
                 outputData += channels;
             }
             return;
         } else {
+            // 这段代码同样是执行层归一化（Layer Normalization）操作，但这次的操作更为通用，
+            // 能处理 inner 不等于 1 的情况，即每个通道有多个元素的情况。
+            // 这是一个循环，对 input 中的每一个外部元素进行处理。
             for (int i = 0; i < outer; i++) {
+                // 这两行代码将 mean 和 var 数组的所有元素初始化为 0。
                 std::fill(mean, mean + inner, 0.f);
                 std::fill(var, var + inner, 0.f);
+                // 这行代码定义了一个指针 inputWalk，指向 inputData。
                 float *inputWalk = inputData;
+                // 这是一个循环，对每个通道进行处理。
                 for (int j = 0; j < channels; j++) {
+                   // 这是一个嵌套循环，对每个通道内的每个元素进行处理。
                     for (int k = 0; k < inner; k++) {
+                        // 这行代码将当前元素的值加到对应的 mean 中，然后 inputWalk 指针向后移动。
                         mean[k] += *inputWalk++;
                     }
                 }
+                // 这是另一个循环，计算每个通道的均值。
                 for (int k = 0; k < inner; k++) {
                     mean[k] /= channels;
                 }
+                // 方差类似
                 inputWalk = inputData;
                 for (int j = 0; j < channels; j++) {
                     for (int k = 0; k < inner; k++) {
@@ -519,6 +634,7 @@ namespace fastllm {
                     var[k] = sqrt(var[k] / channels + 1e-5);
                 }
 
+                // 计算输出也是类似
                 inputWalk = inputData;
                 float *outputWalk = outputData;
                 for (int j = 0; j < channels; j++) {
@@ -1175,6 +1291,7 @@ namespace fastllm {
         }
     }
 
+
     void CpuLinearOp::Run(const std::string &opType, const fastllm::DataDict &datas,
                           const fastllm::FloatDict &floatParams, const fastllm::IntDict &intParams) {
 //auto st = std::chrono::system_clock::now();
@@ -1189,26 +1306,41 @@ namespace fastllm {
         int k = output.dims.back();
 
         if (input.dataType == DataType::FLOAT32 && output.dataType == DataType::FLOAT32) {
+	        // 这段代码处理权重数据类型为FLOAT32的情况。首先，它将输入、权重、输出和
+	        // 偏置数据的指针分别转换为 float* 类型的指针。对于偏置数据，如果其维度长度大于0，
+	        // 则获取其数据指针，否则设为nullptr。
             if (weight.dataType == DataType::FLOAT32) {
                 float *inputData = (float *) input.cpuData;
                 float *weightData = (float *) weight.cpuData;
                 float *outputData = (float *) output.cpuData;
                 float *biasData = bias.dims.size() > 0 ? (float *) bias.cpuData : nullptr;
 
-                int threadNum = GetThreads();
-                int per = k / threadNum;
-                int cur = 0;
-                auto pool = GetPool();
-                std::vector<std::future<void> > futures;
-                for (int i = 0; i < threadNum - 1; i++) {
-                    int end = cur + per + (cur + per * (threadNum - i) < k);
-                    futures.push_back(pool->Submit(FloatLinearPart, inputData, weightData, biasData, outputData,
-                                                   n, m, k, cur, end));
-                    cur = end;
-                }
+            // 接下来，计算需要的线程数（threadNum）。这里用的是用户设定的线程数
+            //（通过 GetThreads() 获得）。然后，每个线程负责的任务数（per）
+            // 为 k（输出数据的最后一个维度）除以线程数。cur 用来表示当前任务的起始位置。
+            int threadNum = GetThreads();
+            int per = k / threadNum;
+            int cur = 0;
+            // 接着，创建线程池（通过 GetPool() 获取）和用于保存线程任务的std::future数组。
+            // 对于每个线程，确定其需要处理的任务范围（从 cur 到 end），然后提交线程任务。
+            // 线程任务是通过调用 FloatLinearPart 函数来执行的，该函数需要输入数据、
+            // 权重数据、偏置数据、输出数据、输入维度（n）、权重维度（m）、输出维度（k）
+            // 以及任务范围（从 cur 到 end）作为参数。
+            auto pool = GetPool();
+            std::vector <std::future <void> > futures;
+            for (int i = 0; i < threadNum - 1; i++) {
+                int end = cur + per + (cur + per * (threadNum - i) < k);
+                futures.push_back(pool->Submit(FloatLinearPart, inputData, weightData, biasData, outputData,
+                                                  n, m, k, cur, end));
+                cur = end;
+            }
 
-                FloatLinearPart(inputData, weightData, biasData, outputData, n, m, k, cur, k);
-                for (int i = 0; i < futures.size(); i++) {
+            // 然后，主线程也执行一部分任务，处理范围为从 cur 到 k。
+            FloatLinearPart(inputData, weightData, biasData, outputData, n, m, k, cur, k);
+            // 最后，主线程等待所有子线程完成工作。通过调用 std::future::get()
+            // 方法来阻塞主线程，直到对应的子线程完成任务。
+            // 这样，可以保证所有的线程任务都完成后，主线程才继续执行。
+            for (int i = 0; i < futures.size(); i++) {
                     futures[i].get();
                 }
             } else if (weight.dataType == DataType::FLOAT16) {
@@ -1242,23 +1374,31 @@ namespace fastllm {
 #ifdef __ARM_FEATURE_FP16_VECTOR_ARITHMETIC
                 delete[] temp;
 #endif
-            } else if (weight.dataType == DataType::INT8) {
-                float *inputData = (float *) input.cpuData;
-                uint8_t *weightData = (uint8_t *) weight.cpuData;
-                float *outputData = (float *) output.cpuData;
-                float *biasData = bias.dims.size() > 0 ? (float *) bias.cpuData : nullptr;
-                weight.CalcWeightSum();
+        } else if (weight.dataType == DataType::INT8) { // 这段代码处理权重数据类型为 INT8 的情况。
+            // 这段代码首先对输入、权重、输出和偏置数据的指针进行类型转换，
+            // 并根据偏置数据的维度是否大于0来决定是否获取偏置数据的指针。然后，它计算了权重数据的总和。
+            float *inputData = (float *) input.cpuData;
+            uint8_t *weightData = (uint8_t *) weight.cpuData;
+            float *outputData = (float *) output.cpuData;
+            float *biasData = bias.dims.size() > 0 ? (float *) bias.cpuData : nullptr;
+            weight.CalcWeightSum();
 
-                std::vector<LowBitConfig> inputConfigs;
-                for (int i = 0; i < n; i++) {
-                    float minValue = 1e9, maxValue = -1e9;
-                    for (int j = 0; j < m; j++) {
-                        minValue = std::min(minValue, inputData[i * m + j]);
-                        maxValue = std::max(maxValue, inputData[i * m + j]);
-                    }
-                    inputConfigs.push_back(LowBitConfig(minValue, maxValue, 8, 0));
+            // 之后，代码创建一个std::vector<LowBitConfig>对象，
+            // LowBitConfig是一个用于存储数据量化信息的类，包括最小值、最大值、位宽和零点。
+            // 这些信息是通过遍历输入数据获得的。
+            std::vector <LowBitConfig> inputConfigs;
+            for (int i = 0; i < n; i++) {
+                float minValue = 1e9, maxValue = -1e9;
+                for (int j = 0; j < m; j++) {
+                    minValue = std::min(minValue, inputData[i * m + j]);
+                    maxValue = std::max(maxValue, inputData[i * m + j]);
                 }
-                std::vector<uint8_t> uinput;
+                inputConfigs.push_back(LowBitConfig(minValue, maxValue, 8, 0));
+            }
+            // 接着，创建一个std::vector<uint8_t>对象uinput，并将其大小设置为输入数据的大小（n * m）。
+            // uinput中的每个元素都是输入数据元素经过inputConfigs中对应配置信息量化后的结果。
+            // 注意这里的量化过程可能会根据是否定义了__AVX2__进行不同的处理。
+            std::vector <uint8_t> uinput;
                 uinput.resize(n * m);
                 for (int i = 0; i < n * m; i++) {
 #ifdef __AVX2__
@@ -1269,20 +1409,31 @@ namespace fastllm {
 #endif
                 }
 
-                MultiplyMultiThread(uinput.data(), weightData, (int32_t *) outputData, n, m, k, GetThreads());
-                for (int i = 0; i < n; i++) {
-                    uint32_t inputSum = 0;
-                    for (int j = 0; j < m; j++) {
+            // 随后，调用MultiplyMultiThread函数，使用多线程并行计算uinput和weightData的乘积，
+            // 并将结果存储在outputData中。
+            MultiplyMultiThread(uinput.data(), weightData, (int32_t*)outputData, n, m, k, GetThreads());
+            // 这段代码的目的是把在使用INT8进行量化计算时由于量化造成的误差进行修正，
+            // 使得结果更接近于使用浮点数进行计算的结果。也就是反量化过程。
+            for (int i = 0; i < n; i++) {
+                // 这一步中，对于每一个输入向量（i从0到n），代码首先初始化inputSum为0，
+                // 然后遍历输入向量的每个元素（j从0到m），将元素值加到inputSum上。
+                // 如果定义了__AVX2__，则在加到inputSum之前，元素值会先与128进行异或操作。
+                uint32_t inputSum = 0;
+                for (int j = 0; j < m; j++) {
 #ifdef __AVX2__
-                        inputSum += uinput[i * m + j] ^ 128;
+                    inputSum += uinput[i * m + j] ^ 128;
 #else
-                        inputSum += uinput[i * m + j];
+                    inputSum += uinput[i * m + j];
 #endif
-                    }
+                }
 
-                    for (int j = 0; j < k; j++) {
-                        int value = ((int32_t *) outputData)[i * k + j];
+                // 接下来，代码遍历每个输出元素（j从0到k），并按照以下步骤进行调整和缩放：
+                for (int j = 0; j < k; j++) {
+                    // 首先，获取输出元素的原始值value。
+                    int value = ((int32_t*)outputData)[i * k + j];
 #ifdef __AVX2__
+                    // 如果定义了__AVX2__，则value会增加128 * weight.weightSum[j]、
+                    // 128 * inputSum，并减去m * 128 * 128。
                         value += (128 * weight.weightSum[j]);
                         value += (128 * inputSum);
                         value -= m * 128 * 128;

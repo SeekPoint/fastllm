@@ -642,3 +642,9 @@ namespace fastllm {
         FastllmCudaApplyLognAttn(input, lognAttn, positionIds);
     }
 }
+
+CudaLlamaRotatePosition2DOp对应的就是上面的Python代码。
+
+void CudaLlamaRotatePosition2DOp::Run(const std::string &opType, const
+.....
+

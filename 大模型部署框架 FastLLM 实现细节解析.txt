@@ -1,0 +1,413 @@
+大模型部署框架 FastLLM 实现细节解析
+
+https://cloud.tencent.com/developer/article/2315021
+
+发布于 2023-08-22 09:06:03
+
+0x1. 调用链和数据结构解析
+以chatglm-6b的支持为例，
+函数入口在 https://github.com/ztxz16/fastllm/blob/master/src/models/chatglm.cpp#L626 ，
+这里的 input 就是输入的 context（string类型）。
+然后 https://github.com/ztxz16/fastllm/blob/master/src/models/chatglm.cpp#L633
+这行代码对 input 进行 tokenizer encode并构造好inputIds，
+再构造好attentionMask之后就可以给Forward函数推理，拿到推理结果之后再使用tokenizer进行decode得到输出。
+
+在这里，inputIds和attentionMask都是Data数据类型，
+类比于PyTorch的Tensor，来对输入数据以及device，shape等信息进行统一管理。
+下面的代码展示了Data数据结构的定义，
+源码在：https://github.com/ztxz16/fastllm/blob/master/include/fastllm.h#L201-L286
+
+class Data {
+    public:
+...
+
+在Forward函数里面，以Data为核心载体，运行chatglm-6b模型的流程，
+具体包含如下的一些算子：https://github.com/ztxz16/fastllm/blob/master/include/fastllm.h#L346-L408 。
+以Permute为例我们浏览下它的实现：
+
+void Permute(const Data &input, const std::vector<int> &axis, Data &output) {
+....
+
+这里的curExecutor负责根据FastLLM编译开启的后端选项把算子Dispatch到不同的device进行执行，
+{"input", (Data*)&input}, {"axis", &axisData}, {"output", (Data*)&output}} 这行代码表示的是一个DataDict对象，
+也就是一个值为data的字典，原始定义为typedef std::map <std::string, Data*> DataDict;。
+接着我们看一下curExecutor的定义和实现：
+
+
+namespace fastllm {
+    class Executor {
+    private:
+fastllm/include/executor.h
+
+从Executor类的定义我们可以判断它负责了在设定的devices上根据opType和输入数据等执行Op的前向计算，也就是Run这个接口。
+由于Executor类是FastLLM的调度核心实现，所以我们来详细解析一下它的实现。
+
+namespace fastllm {
+    Executor::Executor() {
+
+,,,
+
+自此，前向计算就顺利完成了，再把推理结果给 tokenizer 解码就结束了，整体的调度执行流程是很简单明了的。
+
+0x2. tokenizer 解析
+接着，我们来解析一下tokenizer的实现。
+先看一下tokenizer的定义（https://github.com/ztxz16/fastllm/blob/master/include/fastllm.h#L287-L310）：
+
+struct Tokenizer {
+        struct TrieNode {
+....
+
+
+我们从实现来看tokenizer的细节：yknote==代码已有改动
+
+  Tokenizer::TrieNode::TrieNode() {
+        this->tokenId = -999999;
+
+上面的：
+
+if (pos != -1) {
+            int space_num = atoi(ret.substr(8, ret.size() - 10).c_str());
+            return std::string(space_num, ' ');
+        }
+
+这行代码应该是有bug，假设 ret 的值为 "Hello<|blank_4>world!"，
+那么在解码时，pos 将是 8，而 space_num 将是 4。然后，函数将返回 " "，
+即包含四个空格字符的字符串。在这种情况下，特殊 token "<|blank_4>" 被成功解码成了四个空格字符，
+但是Hello和world!这部分被删掉了。所以最终的解码结果是不对的，需要修正一下。
+
+对tokenizer的解析可以发现，在c++中使用字典树数据结构来实现tokenizer是相对比较简单方便的。
+
+接下来，我们对CPU后端和GPU后端的算子实现进行解析。
+
+
+0x3. CPU后端算子实现
+主要就是对这个文件进行解析：https://github.com/ztxz16/fastllm/blob/master/src/devices/cpu/cpudevice.cpp 。
+
+辅助函数
+    bool CpuDevice::Malloc(void **ret, size_t size) {
+        *ret = (void*)new uint8_t [size];
+
+....
+
+
+在启用AVX2进行点积计算时，有一个特殊的操作就是把b[i]转换为有符号的整数并减掉128。
+我没太懂这个操作的意义是什么，问了一下gpt4获得了如下的回答：
+02.png
+
+然后这里有个疑问是在DotU4U8的实现中调用的指令应该是AVX2的指令集，但确是在AVX2宏关闭时调用的，不清楚这里是否会有bug。
+03.png
+
+上述函数中涉及到大量的intel Intrinsics指令细节，
+读者想详细了解可以参考官方文档：https://www.intel.com/content/www/us/en/docs/intrinsics-guide/index.html 。
+
+CpuEmbedding 算子解析
+// CpuEmbedding 算子的形状推导函数，这个函数接受四个参数：
+// 一个 std::string 类型的 opType，两个字典类型的 datas 和 floatParams，以及一个 intParams。
+void CpuEmbedding::Reshape(const std::string &opType, const fastllm::DataDict &datas,
+                               cons
+....
+
+CpuLayerNormOp 解析
+
+void CpuLayerNormOp::Run(const std::string &opType, const fastllm::DataDict &datas,
+
+......
+
+CPULinearOp 解析
+最后简单读一下CPULinearOp这个算子。
+
+void CpuLinearOp::Run(const std::string &opType, const fastllm::DataDict &datas,
+                          const fastllm::FloatDict &floatParams, const fastllm::IntDict &intParams) {
+//auto st = std::chrono::system_clock::now();
+
+....
+
+
+
+在上面的实现中，MultiplyMultiThread完成了对量化输入的计算，我们看一下它的实现细节：
+
+//a = [n, m], b = [k, m], c = aT(b') = [n, k]
+    void MultiplyMultiThread(uint8_t *a, uint8_t *b, int32_t *c, int n, int m, int k, int threadNum) {
+        int per = k / threadNum;
+        int cur = 0;
+        if (threadNum == 1) {
+            Multiply(a, b + cur * m, c + cur, n, m, k - cur, k);
+        } else {
+            auto pool = GetPool();
+            std::vector<std::future<void> > futures;
+            for (int i = 0; i < threadNum; i++) {
+                int end = cur + per + (cur + per * (threadNum - i) < k);
+                if (i == threadNum - 1) {
+                    end = k;
+                }
+                futures.push_back(pool->Submit(Multiply, a, b + cur * m, c + cur, n, m, end - cur, k));
+                cur = end;
+            }
+            for (int i = 0; i < futures.size(); i++) {
+                futures[i].get();
+            }
+        }
+    }
+
+可以看到这段代码仍然是在用线程池来启动多个线程完成计算，核心部分是Multiply函数，这个函数的实现细节：
+
+   //a = [n, m], b = [k, m], c = aT(b') = [n, k]
+    void Multiply(uint8_t *a, uint8_t *b, int32_t *c, int n, int m, int k, int kstride) {
+#ifdef __ARM_FEATURE_DOTPROD
+        int block = 0;
+        for (; block < n; block++) {
+            uint8_t *weightWalk = b;
+            uint8_t *inputStart = a + block * m;
+
+            for (int i = 0; i < k; i++) {
+                int value = 0;
+                uint8_t *inputWalk = inputStart;
+                int j = 0;
+                uint32x4_t sum0 = {0, 0, 0, 0};
+                for (; j + 31 < m; j += 32) {
+                    uint8x16_t vi = vld1q_u8(inputWalk);
+                    uint8x16_t vi0 = vld1q_u8(inputWalk + 16);
+                    uint8x16_t vw = vld1q_u8(weightWalk);
+                    uint8x16_t vw0 = vld1q_u8(weightWalk + 16);
+                    sum0 = vdotq_u32(sum0, vi, vw);
+                    sum0 = vdotq_u32(sum0, vi0, vw0);
+                    inputWalk += 32;
+                    weightWalk += 32;
+                }
+
+                value += sum0[0] + sum0[1] + sum0[2] + sum0[3];
+                for (; j < m; j++) {
+        value += (int)(*(weightWalk++)) * (*(inputWalk++));
+       }
+                c[block * kstride + i] = value;
+            }
+        }
+#elif defined(__aarch64__)
+        int block = 0;
+        for (; block < n; block++) {
+            uint8_t *weightWalk = b;
+            uint8_t *inputStart = a + block * m;
+
+            for (int i = 0; i < k; i++) {
+                int value = 0;
+                uint8_t *inputWalk = inputStart;
+
+                int per = 64;
+                int cnt = m / per;
+                int sur = m % per;
+
+                uint32x4_t sum = {0};
+                uint16x8_t temp = {0};
+                uint16x8_t temp1 = {0};
+                uint16x8_t temp2 = {0};
+                uint16x8_t temp3 = {0};
+                uint16x8_t temp4 = {0};
+                uint16x8_t temp5 = {0};
+                uint16x8_t temp6 = {0};
+                uint16x8_t temp7 = {0};
+
+                while (cnt--) {
+                    temp = vmull_u8(vld1_u8(inputWalk), vld1_u8(weightWalk));
+                    temp1 = vmull_u8(vld1_u8(inputWalk + 8), vld1_u8(weightWalk + 8));
+                    temp2 = vmull_u8(vld1_u8(inputWalk + 16), vld1_u8(weightWalk + 16));
+                    temp3 = vmull_u8(vld1_u8(inputWalk + 24), vld1_u8(weightWalk + 24));
+                    temp4 = vmull_u8(vld1_u8(inputWalk + 32), vld1_u8(weightWalk + 32));
+                    temp5 = vmull_u8(vld1_u8(inputWalk + 40), vld1_u8(weightWalk + 40));
+                    temp6 = vmull_u8(vld1_u8(inputWalk + 48), vld1_u8(weightWalk + 48));
+                    temp7 = vmull_u8(vld1_u8(inputWalk + 56), vld1_u8(weightWalk + 56));
+
+                    sum = vpadalq_u16(sum, temp);
+                    sum = vpadalq_u16(sum, temp1);
+                    sum = vpadalq_u16(sum, temp2);
+                    sum = vpadalq_u16(sum, temp3);
+                    sum = vpadalq_u16(sum, temp4);
+                    sum = vpadalq_u16(sum, temp5);
+                    sum = vpadalq_u16(sum, temp6);
+                    sum = vpadalq_u16(sum, temp7);
+
+                    inputWalk += per;
+                    weightWalk += per;
+                }
+
+                value += (sum[0] + sum[1] + sum[2] + sum[3]);
+                while (sur--) {
+                    value += (int)(*(weightWalk++)) * (*(inputWalk++));
+                }
+
+                c[block * kstride + i] = value;
+            }
+        }
+#elif defined(__AVX__)
+        int block = 0;
+        for (; block < n; block++) {
+            uint8_t *weightWalk = b;
+            uint8_t *inputStart = a + block * m;
+
+            for (int i = 0; i < k; i++) {
+                uint8_t *inputWalk = inputStart;
+
+                c[block * kstride + i] = DotU8U8(inputWalk, weightWalk, m);
+                weightWalk += m;
+            }
+        }
+#else
+        int block = 0;
+     for (; block < n; block++) {
+      uint8_t *weightWalk = b;
+      uint8_t *inputStart = a + block * m;
+
+      for (int i = 0; i < k; i++) {
+       int value = 0;
+       uint8_t *inputWalk = inputStart;
+       for (int j = 0; j < m; j++) {
+        value += (int)(*(weightWalk++)) * (*(inputWalk++));
+       }
+
+       c[block * kstride + i] = value;
+      }
+     }
+#endif
+    }
+
+这段代码实现了两个矩阵的乘法。输入的两个矩阵是 (a) 和 (b)，结果矩阵是 (c)。
+矩阵 (a) 的形状是 ([n, m])，矩阵 (b) 的形状是 ([k, m])，所以矩阵 (c = a^T b) 的形状是 ([n, k])。
+
+在这段代码中，使用了不同的方法进行矩阵乘法，取决于系统是否支持特定的优化硬件指令。
+
+    如果系统支持 ARMv8.2 的点积指令（__ARM_FEATURE_DOTPROD），那么会使用这个指令进行矩阵乘法。
+    在这种情况下，每次会同时处理32个元素，这样可以加速计算。
+
+    如果系统支持 ARMv8（__aarch64__），但不支持 ARMv8.2 的点积指令，那么会使用 NEON SIMD 指令进行矩阵乘法。
+    在这种情况下，每次会同时处理64个元素。
+
+    如果系统支持 AVX（__AVX__），那么会使用 AVX 指令进行矩阵乘法。
+    在这种情况下，会使用 DotU8U8 函数来计算向量的点积。
+
+    如果系统不支持上述任何一种优化指令，那么会使用基础的方法进行矩阵乘法。
+    在这种情况下，每次只处理一个元素。
+
+    这段代码的优化部分主要利用了 SIMD（单指令多数据）的并行化特性，通过同时处理多个元素来加速计算。
+    而选择使用哪种优化方法，取决于系统支持哪种硬件指令。
+
+CPU后端的算子解析就暂时讲到这里，我们发现CPU的算子实现不仅考虑了Intel CPU也考虑了Arm端的优化，这也是FastLLM可以在Arm边缘端部署大模型的原因。
+
+0x4. GPU后端算子实现
+GPU后端算子实现在
+https://github.com/ztxz16/fastllm/blob/master/src/devices/cuda/cudadevice.cpp
+和
+https://github.com/ztxz16/fastllm/blob/master/src/devices/cuda/fastllm-cuda.cu 。
+我们还是挑几个算子来讲解。
+
+CudaLlamaRotatePosition2DOp
+LLama的ROPE实现在：
+https://github.com/huggingface/transformers/blob/main/src/transformers/models/llama/modeling_llama.py#L92-L126 。
+
+# 这个类是用来创建旋转位置编码（Rotary Position Embedding）的。
+# Llama模型引入了旋转位置编码，以改进长序列处理的性能。
+class LlamaRotaryEmbedding(torch.nn.Module):
+    # 这是类的初始化方法，接收四个参数：dim（嵌入的维度），max_position_embeddings
+    # （最大的位置嵌入长度，默认为2048），base（基数，默认为10000）和device（设备类型，例如CPU或GPU）。
+    def __init__(self, dim, max_position_embeddings=2048, base=10000, device=None):
+        super().__init__()
+        self.dim = dim # 将输入的dim参数保存到self.dim属性中。
+        # # 将输入的max_position_embeddings参数保存到self.max_position_embeddings属性中。
+        self.max_position_embeddings = max_position_embeddings
+        # 将输入的base参数保存到self.base属性中。
+        self.base = base
+        # 计算逆频率并保存到变量inv_freq中。逆频率是一种用于位置编码的技巧，
+        # 它可以帮助模型更好地捕捉位置信息。
+        inv_freq = 1.0 / (self.base ** (torch.arange(0, self.dim, 2).float().to(device) / self.dim))
+        # 将inv_freq保存到模型的缓存中。register_buffer是PyTorch nn.Module的一个方法，
+        # 它用于保存一些不需要计算梯度的变量。
+        self.register_buffer("inv_freq", inv_freq, persistent=False)
+
+        # Build here to make `torch.jit.trace` work.
+        # 调用_set_cos_sin_cache方法，预先计算并保存正弦和余弦的缓存值。
+        self._set_cos_sin_cache(
+            seq_len=max_position_embeddings, device=self.inv_freq.device, dtype=torch.get_default_dtype()
+        )
+
+    # 这是一个私有方法，接收三个参数：seq_len（序列长度），device（设备类型）和dtype（数据类型）
+    def _set_cos_sin_cache(self, seq_len, device, dtype):
+        # 将输入的seq_len参数保存到self.max_seq_len_cached属性中。
+        self.max_seq_len_cached = seq_len
+        # 生成一个长度为max_seq_len_cached的序列，并保存到变量t中。
+        t = torch.arange(self.max_seq_len_cached, device=device, dtype=self.inv_freq.dtype)
+
+        # 使用外积计算频率和t的乘积，结果保存到变量freqs中。
+        freqs = torch.einsum("i,j->ij", t, self.inv_freq)
+        # Different from paper, but it uses a different permutation in order to obtain the same calculation
+        # 将频率的两份副本拼接在一起，结果保存到变量emb中。
+        emb = torch.cat((freqs, freqs), dim=-1)
+        # 计算emb的余弦值，然后将结果保存到模型的缓存中。
+        self.register_buffer("cos_cached", emb.cos()[None, None, :, :].to(dtype), persistent=False)
+        # 计算emb的正弦值，然后将结果保存到模型的缓存中。
+        self.register_buffer("sin_cached", emb.sin()[None, None, :, :].to(dtype), persistent=False)
+
+    # 这是模型的前向传播方法，接收两个参数：x（输入数据）和seq_len（序列长度）。
+    def forward(self, x, seq_len=None):
+        # x: [bs, num_attention_heads, seq_len, head_size]
+        # 如果输入的序列长度大于缓存的最大序列长度，那么调用_set_cos_sin_cache方法，更新缓存。
+        if seq_len > self.max_seq_len_cached:
+            self._set_cos_sin_cache(seq_len=seq_len, device=x.device, dtype=x.dtype)
+
+        # 返回对应输入位置的正弦和余弦值。这些值将用于旋转位置编码。
+        return (
+            self.cos_cached[:, :, :seq_len, ...].to(dtype=x.dtype),
+            self.sin_cached[:, :, :seq_len, ...].to(dtype=x.dtype),
+        )
+
+def apply_rotary_pos_emb(q, k, cos, sin, position_ids):
+    # The first two dimensions of cos and sin are always 1, so we can `squeeze` them.
+    cos = cos.squeeze(1).squeeze(0)  # [seq_len, dim]
+    sin = sin.squeeze(1).squeeze(0)  # [seq_len, dim]
+    cos = cos[position_ids].unsqueeze(1)  # [bs, 1, seq_len, dim]
+    sin = sin[position_ids].unsqueeze(1)  # [bs, 1, seq_len, dim]
+    q_embed = (q * cos) + (rotate_half(q) * sin)
+    k_embed = (k * cos) + (rotate_half(k) * sin)
+    return q_embed, k_embed
+
+.....
+
+CudaLlamaRotatePosition2DOp对应的就是上面的Python代码。
+
+    void CudaLlamaRotatePosition2DOp::Run(const std::string &opType, const fastllm::DataDict &datas,
+                                         const fastllm:
+    ....
+这里调用的是FastllmCudaLlamaRotatePosition2D这个函数，它的实现和解析如下：
+
+    bool FastllmCudaLlamaRotatePosition2D(fastllm::Data &data, const
+    .....
+
+最后再解析下这个cuda kernel。
+    __global__ void FastllmLlamaRotatePosition2DKernel(float *data,
+    ......
+
+直接看这个cuda kernel可能比较难理解，
+可以结合https://github.com/ztxz16/fastllm/blob/master/src/devices/cpu/cpudevice.cpp#L2204-L2233 这里的cpu实现来看，
+这样来看设置batch * seq_length * n个block，每个block处理m个元素就是比较合理直观的。
+
+    void CpuLlamaRotatePosition2DOp::Run(const std::string &opType,
+    ....
+
+FastLLM在cuda上的实现不算高校，不过优点在于它支持了完整的int8和int4量化的计算，有兴趣的读者可以自行研究这部分kernel实现。
+
+0x5. LLMSamping解析
+在 chatglm-6b 的实现中，在前向推理完成后以及tokenizer解码之前有一个根据logits取label的过程：
+https://github.com/ztxz16/fastllm/blob/master/src/models/chatglm.cpp#L267-L279 。
+
+    if (generationConfig.IsSimpleGreedy()) {
+                // 对 logits 进行 TopK 操作，将结果
+    ....
+
+LLMSampling是一种常见的在序列生成任务中，根据不同的需求，使用不同的策略生成序列的方法。
+我们这里来研究一下它的实现。它的实现在：https://github.com/ztxz16/fastllm/blob/master/src/fastllm.cpp#L874-L916 。
+
+    int LLMSampling(Data &logits, int outerOffset,
+    .....
+
+0x6. 总结
+接着 大模型部署框架 FastLLM 简要解析 这篇文章首先梳理了一下FastLLM的调用链和关键的数据结构，
+然后解析了 FastLLM 的一些实现细节和CPU/GPU后端实现采用的优化技巧。
+
+本文参与 腾讯云自媒体分享计划，分享自微信公众号。
